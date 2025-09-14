@@ -64,9 +64,31 @@ export class PollService {
       uniqueVoters: 0
     };
 
+    // Clean the poll data to remove any undefined values before saving
+    const cleanPoll = this.removeUndefinedValues(poll);
+
     // Use setDoc with the pollId as the document ID instead of addDoc
-    await setDoc(doc(db, POLLS_COLLECTION, pollId), poll);
+    await setDoc(doc(db, POLLS_COLLECTION, pollId), cleanPoll);
     return pollId;
+  }
+
+  // Helper function to remove undefined values from nested objects
+  private static removeUndefinedValues(obj: unknown): unknown {
+    if (obj === null || typeof obj !== 'object') {
+      return obj;
+    }
+
+    if (Array.isArray(obj)) {
+      return obj.map(item => this.removeUndefinedValues(item));
+    }
+
+    const cleaned: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+      if (value !== undefined) {
+        cleaned[key] = this.removeUndefinedValues(value);
+      }
+    }
+    return cleaned;
   }
 
   // Get poll by ID

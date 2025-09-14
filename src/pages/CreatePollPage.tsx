@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Trash2, Settings, Calendar } from 'lucide-react';
 import type { User as FirebaseUser } from 'firebase/auth';
@@ -34,6 +34,15 @@ export const CreatePollPage = ({ user }: CreatePollPageProps) => {
     }
   });
   const [expirationDate, setExpirationDate] = useState('');
+
+  // Auto-set expiration date when auto-delete is enabled
+  useEffect(() => {
+    if (formData.settings.autoDelete && !expirationDate && formData.settings.autoDeleteAfterDays) {
+      const defaultDate = new Date();
+      defaultDate.setDate(defaultDate.getDate() + formData.settings.autoDeleteAfterDays);
+      setExpirationDate(defaultDate.toISOString().slice(0, 16));
+    }
+  }, [formData.settings.autoDelete, formData.settings.autoDeleteAfterDays, expirationDate]);
 
   const addQuestion = () => {
     setFormData(prev => ({
@@ -129,7 +138,20 @@ export const CreatePollPage = ({ user }: CreatePollPageProps) => {
         throw new Error('Each question must have at least 2 answer options');
       }
 
-      // Clean up form data
+      // Clean up form data and handle expiration logic
+      let finalExpiresAt: Timestamp | undefined = undefined;
+      
+      if (expirationDate) {
+        // User explicitly set an expiration date
+        finalExpiresAt = Timestamp.fromDate(new Date(expirationDate));
+      } else if (formData.settings.autoDelete && formData.settings.autoDeleteAfterDays) {
+        // Auto-delete is enabled but no explicit date - set default expiration
+        const defaultExpirationDate = new Date();
+        defaultExpirationDate.setDate(defaultExpirationDate.getDate() + formData.settings.autoDeleteAfterDays);
+        finalExpiresAt = Timestamp.fromDate(defaultExpirationDate);
+      }
+      // If neither condition is met, finalExpiresAt remains undefined and will be omitted
+
       const cleanedData: PollFormData = {
         ...formData,
         questions: formData.questions.map(q => ({
@@ -138,7 +160,8 @@ export const CreatePollPage = ({ user }: CreatePollPageProps) => {
         })),
         settings: {
           ...formData.settings,
-          expiresAt: expirationDate ? Timestamp.fromDate(new Date(expirationDate)) : undefined
+          // Only include expiresAt if it's defined
+          ...(finalExpiresAt && { expiresAt: finalExpiresAt })
         }
       };
 
@@ -364,7 +387,10 @@ export const CreatePollPage = ({ user }: CreatePollPageProps) => {
                       min={new Date().toISOString().slice(0, 16)}
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      Leave empty for polls that never expire
+                      {formData.settings.autoDelete && !expirationDate 
+                        ? `Auto-delete is enabled. Poll will expire in ${formData.settings.autoDeleteAfterDays} days if no date is set.`
+                        : "Leave empty for polls that never expire"
+                      }
                     </p>
                   </div>
 
@@ -379,9 +405,9 @@ export const CreatePollPage = ({ user }: CreatePollPageProps) => {
                   </label>
 
                   {formData.settings.autoDelete && (
-                    <div className="ml-6">
+                    <div className="ml-6 space-y-2">
                       <label className="block text-sm text-gray-700 mb-1">
-                        Delete after (days)
+                        Default expiration (days from now)
                       </label>
                       <input
                         type="number"
@@ -391,6 +417,9 @@ export const CreatePollPage = ({ user }: CreatePollPageProps) => {
                         onChange={(e) => updateSettings({ autoDeleteAfterDays: parseInt(e.target.value) })}
                         className="w-24 px-3 py-1 border border-gray-300 rounded-md"
                       />
+                      <p className="text-xs text-gray-500">
+                        Used as default if no expiration date is set above
+                      </p>
                     </div>
                   )}
                 </div>
