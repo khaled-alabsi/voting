@@ -13,6 +13,15 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
+// Validate Firebase configuration
+const requiredEnvVars = ['VITE_FIREBASE_API_KEY', 'VITE_FIREBASE_AUTH_DOMAIN', 'VITE_FIREBASE_PROJECT_ID'];
+const missingVars = requiredEnvVars.filter(varName => !import.meta.env[varName]);
+
+if (missingVars.length > 0) {
+  console.warn('Missing Firebase environment variables:', missingVars);
+  console.warn('Firebase features may not work properly. Please configure the required environment variables.');
+}
+
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
