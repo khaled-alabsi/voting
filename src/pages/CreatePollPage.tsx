@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Trash2, Settings, Calendar } from 'lucide-react';
+import { Plus, Trash2, Settings, Calendar, AlertCircle } from 'lucide-react';
 import type { User as FirebaseUser } from 'firebase/auth';
 import { PollService } from '../services/pollService';
 import type { PollFormData, QuestionFormData, PollSettings } from '../types';
@@ -29,6 +29,7 @@ export const CreatePollPage = ({ user }: CreatePollPageProps) => {
       requireAuthentication: false,
       allowNewQuestions: false,
       allowNewOptions: false,
+      showResultsToVoters: false, // Default to NOT showing results
       autoDelete: false,
       autoDeleteAfterDays: 30
     }
@@ -166,7 +167,8 @@ export const CreatePollPage = ({ user }: CreatePollPageProps) => {
       };
 
       const pollId = await PollService.createPoll(cleanedData, user.uid);
-      navigate(`/poll/${pollId}`);
+      // Navigate to management page instead of poll page
+      navigate(`/manage/${pollId}`);
     } catch (error) {
       console.error('Error creating poll:', error);
       alert(error instanceof Error ? error.message : 'Failed to create poll');
@@ -217,17 +219,7 @@ export const CreatePollPage = ({ user }: CreatePollPageProps) => {
 
           {/* Questions */}
           <section>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Questions</h2>
-              <button
-                type="button"
-                onClick={addQuestion}
-                className="flex items-center px-3 py-1.5 text-blue-600 border border-blue-600 rounded-md hover:bg-blue-50"
-              >
-                <Plus className="w-4 h-4 mr-1" />
-                Add Question
-              </button>
-            </div>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Questions</h2>
 
             <div className="space-y-6">
               {formData.questions.map((question, qIndex) => (
@@ -319,6 +311,18 @@ export const CreatePollPage = ({ user }: CreatePollPageProps) => {
                   </div>
                 </div>
               ))}
+              
+              {/* Add Question Button - Now placed AFTER all questions */}
+              <div className="flex justify-center">
+                <button
+                  type="button"
+                  onClick={addQuestion}
+                  className="flex items-center px-4 py-2 text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Another Question
+                </button>
+              </div>
             </div>
           </section>
 
@@ -370,7 +374,28 @@ export const CreatePollPage = ({ user }: CreatePollPageProps) => {
                   />
                   <span className="text-sm text-gray-700">Allow voters to add options (global)</span>
                 </label>
+
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={formData.settings.showResultsToVoters}
+                    onChange={(e) => updateSettings({ showResultsToVoters: e.target.checked })}
+                    className="mr-2"
+                  />
+                  <span className="text-sm text-gray-700">Show results to voters after they vote</span>
+                </label>
               </div>
+              
+              {!formData.settings.showResultsToVoters && (
+                <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                  <div className="flex items-start">
+                    <AlertCircle className="w-4 h-4 text-blue-600 mr-2 mt-0.5 flex-shrink-0" />
+                    <p className="text-xs text-blue-800">
+                      Results will be hidden from voters. Only you (the creator) can view results through the management panel.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               <div className="border-t pt-4">
                 <div className="space-y-4">

@@ -27,6 +27,7 @@ const dummyPolls: PollFormData[] = [
       requireAuthentication: false,
       allowNewQuestions: false,
       allowNewOptions: true,
+      showResultsToVoters: true,
       autoDelete: false,
       expiresAt: Timestamp.fromDate(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)) // 7 days from now
     }
@@ -59,6 +60,7 @@ const dummyPolls: PollFormData[] = [
       requireAuthentication: true,
       allowNewQuestions: false,
       allowNewOptions: true,
+      showResultsToVoters: false,
       autoDelete: true,
       autoDeleteAfterDays: 3,
       expiresAt: Timestamp.fromDate(new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)) // 3 days from now
@@ -86,6 +88,7 @@ const dummyPolls: PollFormData[] = [
       requireAuthentication: false,
       allowNewQuestions: true,
       allowNewOptions: true,
+      showResultsToVoters: true,
       autoDelete: false,
       expiresAt: Timestamp.fromDate(new Date(Date.now() + 5 * 24 * 60 * 60 * 1000)) // 5 days from now
     }

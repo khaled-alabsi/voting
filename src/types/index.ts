@@ -40,6 +40,7 @@ export interface PollSettings {
   requireAuthentication: boolean;
   allowNewQuestions: boolean;
   allowNewOptions: boolean; // Global setting, can be overridden per question
+  showResultsToVoters: boolean; // Whether voters can see results
   expiresAt?: Timestamp;
   autoDelete: boolean;
   autoDeleteAfterDays?: number;
