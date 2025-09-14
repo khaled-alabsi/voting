@@ -3,7 +3,6 @@ import {
   collection, 
   addDoc, 
   doc, 
-  getDoc, 
   updateDoc, 
   deleteDoc,
   getDocs,
@@ -68,23 +67,17 @@ export function VotingProvider({ children }) {
       const newPool = {
         id: poolId,
         ...poolData,
-        createdAt: new Date(),
+        createdAt: serverTimestamp(),
         votes: {},
         totalVotes: 0,
         isActive: true,
       };
 
-      // For demo purposes, store in localStorage instead of Firebase
-      try {
-        const storedPools = JSON.parse(localStorage.getItem('voting-pools') || '[]');
-        storedPools.push(newPool);
-        localStorage.setItem('voting-pools', JSON.stringify(storedPools));
-      } catch (error) {
-        console.warn('LocalStorage demo mode:', error);
-      }
+      // Store in Firebase Firestore
+      await addDoc(collection(db, 'voting-pools'), newPool);
       
-      dispatch({ type: 'ADD_POOL', payload: newPool });
-      return newPool;
+      dispatch({ type: 'ADD_POOL', payload: { ...newPool, createdAt: new Date() } });
+      return { ...newPool, createdAt: new Date() };
     } catch (error) {
       dispatch({ type: 'SET_ERROR', payload: error.message });
       throw error;
@@ -95,13 +88,17 @@ export function VotingProvider({ children }) {
   const getPool = async (poolId) => {
     dispatch({ type: 'SET_LOADING', payload: true });
     try {
-      // For demo purposes, get from localStorage
-      const storedPools = JSON.parse(localStorage.getItem('voting-pools') || '[]');
-      const pool = storedPools.find(p => p.id === poolId);
+      // Query Firebase Firestore to find pool by id
+      const poolsRef = collection(db, 'voting-pools');
+      const q = query(poolsRef, where('id', '==', poolId));
+      const querySnapshot = await getDocs(q);
       
-      if (!pool) {
+      if (querySnapshot.empty) {
         throw new Error('Pool not found');
       }
+      
+      const poolDoc = querySnapshot.docs[0];
+      const pool = { docId: poolDoc.id, ...poolDoc.data() };
       
       dispatch({ type: 'SET_CURRENT_POOL', payload: pool });
       return pool;
@@ -112,7 +109,7 @@ export function VotingProvider({ children }) {
   };
 
   // Submit a vote
-  const submitVote = async (poolId, questionIndex, answerIndex, isAnonymous = true) => {
+  const submitVote = async (poolId, questionIndex, answerIndex) => {
     dispatch({ type: 'SET_LOADING', payload: true });
     try {
       const pool = await getPool(poolId);
@@ -136,18 +133,13 @@ export function VotingProvider({ children }) {
       // Update total votes
       const totalVotes = (pool.totalVotes || 0) + 1;
 
-      // Update pool in localStorage
-      const storedPools = JSON.parse(localStorage.getItem('voting-pools') || '[]');
-      const poolIndex = storedPools.findIndex(p => p.id === poolId);
-      if (poolIndex !== -1) {
-        storedPools[poolIndex] = { 
-          ...storedPools[poolIndex], 
-          votes, 
-          totalVotes,
-          lastVoteAt: new Date()
-        };
-        localStorage.setItem('voting-pools', JSON.stringify(storedPools));
-      }
+      // Update pool in Firebase Firestore
+      const poolDocRef = doc(db, 'voting-pools', pool.docId);
+      await updateDoc(poolDocRef, {
+        votes,
+        totalVotes,
+        lastVoteAt: serverTimestamp()
+      });
 
       const updatedPool = { ...pool, votes, totalVotes };
       dispatch({ type: 'UPDATE_POOL', payload: updatedPool });
@@ -165,17 +157,12 @@ export function VotingProvider({ children }) {
     try {
       const pool = await getPool(poolId);
       
-      // Update pool in localStorage
-      const storedPools = JSON.parse(localStorage.getItem('voting-pools') || '[]');
-      const poolIndex = storedPools.findIndex(p => p.id === poolId);
-      if (poolIndex !== -1) {
-        storedPools[poolIndex] = { 
-          ...storedPools[poolIndex], 
-          ...updates,
-          updatedAt: new Date()
-        };
-        localStorage.setItem('voting-pools', JSON.stringify(storedPools));
-      }
+      // Update pool in Firebase Firestore
+      const poolDocRef = doc(db, 'voting-pools', pool.docId);
+      await updateDoc(poolDocRef, {
+        ...updates,
+        updatedAt: serverTimestamp()
+      });
 
       const updatedPool = { ...pool, ...updates };
       dispatch({ type: 'UPDATE_POOL', payload: updatedPool });
@@ -187,14 +174,36 @@ export function VotingProvider({ children }) {
     }
   };
 
+  // Load all pools
+  const loadPools = async () => {
+    dispatch({ type: 'SET_LOADING', payload: true });
+    try {
+      const poolsRef = collection(db, 'voting-pools');
+      const q = query(poolsRef, orderBy('createdAt', 'desc'));
+      const querySnapshot = await getDocs(q);
+      
+      const pools = querySnapshot.docs.map(doc => ({
+        docId: doc.id,
+        ...doc.data()
+      }));
+      
+      dispatch({ type: 'SET_POOLS', payload: pools });
+      return pools;
+    } catch (error) {
+      dispatch({ type: 'SET_ERROR', payload: error.message });
+      throw error;
+    }
+  };
+
   // Delete a pool
   const deletePool = async (poolId) => {
     dispatch({ type: 'SET_LOADING', payload: true });
     try {
-      // Remove from localStorage
-      const storedPools = JSON.parse(localStorage.getItem('voting-pools') || '[]');
-      const filteredPools = storedPools.filter(p => p.id !== poolId);
-      localStorage.setItem('voting-pools', JSON.stringify(filteredPools));
+      const pool = await getPool(poolId);
+      
+      // Remove from Firebase Firestore
+      const poolDocRef = doc(db, 'voting-pools', pool.docId);
+      await deleteDoc(poolDocRef);
       
       dispatch({ type: 'DELETE_POOL', payload: poolId });
     } catch (error) {
@@ -207,6 +216,7 @@ export function VotingProvider({ children }) {
     ...state,
     createPool,
     getPool,
+    loadPools,
     submitVote,
     updatePool,
     deletePool,
