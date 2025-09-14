@@ -34,6 +34,20 @@ export const AuthModal = ({ onClose, onSuccess }: AuthModalProps) => {
     }
   };
 
+  const handleAnonymousSignIn = async () => {
+    setLoading(true);
+    setError('');
+
+    try {
+      await AuthService.signInAnonymously();
+      onSuccess();
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Anonymous sign in failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
       <div className="bg-white/90 backdrop-blur-md border border-white/20 shadow-xl rounded-xl p-6 max-w-md w-full">
@@ -117,6 +131,25 @@ export const AuthModal = ({ onClose, onSuccess }: AuthModalProps) => {
             {loading ? 'Loading...' : (isSignUp ? 'Create Account' : 'Sign In')}
           </button>
         </form>
+
+        <div className="mt-4">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">Or</span>
+            </div>
+          </div>
+
+          <button
+            onClick={handleAnonymousSignIn}
+            disabled={loading}
+            className="mt-4 w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-lg transition-all duration-200 border border-gray-300"
+          >
+            Continue as Guest
+          </button>
+        </div>
 
         <div className="mt-4 text-center">
           <button

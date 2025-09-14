@@ -1,7 +1,20 @@
 import { Link } from 'react-router-dom';
 import { Plus, Users, BarChart3, Clock } from 'lucide-react';
+import type { User as FirebaseUser } from 'firebase/auth';
 
-export const HomePage = () => {
+interface HomePageProps {
+  user?: FirebaseUser | null;
+  onSignInRequired?: () => void;
+}
+
+export const HomePage = ({ user, onSignInRequired }: HomePageProps) => {
+  const handleCreatePollClick = (e: React.MouseEvent) => {
+    if (!user) {
+      e.preventDefault();
+      onSignInRequired?.();
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto">
       {/* Hero Section */}
@@ -20,6 +33,7 @@ export const HomePage = () => {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               to="/create"
+              onClick={handleCreatePollClick}
               className="bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold py-4 px-8 rounded-lg shadow-lg hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-200 text-lg inline-flex items-center"
             >
               <Plus className="w-5 h-5 mr-2" />
