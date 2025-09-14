@@ -12,6 +12,7 @@ const SimpleDebugPage: React.FC = () => {
               <h2 className="text-xl font-semibold text-white mb-4">Basic Information</h2>
               <div className="text-gray-300 space-y-2">
                 <div>Page loaded successfully ✅</div>
+                <div>Build timestamp: {new Date().toISOString()}</div>
                 <div>Current URL: {window.location.href}</div>
                 <div>Environment: {import.meta.env.MODE}</div>
                 <div>Base URL: {import.meta.env.BASE_URL}</div>
