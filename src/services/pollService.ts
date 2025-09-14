@@ -1,7 +1,7 @@
 import {
   collection,
   doc,
-  addDoc,
+  setDoc,
   updateDoc,
   getDoc,
   getDocs,
@@ -59,12 +59,13 @@ export class PollService {
       questions,
       answers,
       isActive: true,
-      shareableLink: `${window.location.origin}/poll/${pollId}`,
+      shareableLink: `/poll/${pollId}`, // Use relative path instead of full URL
       totalVotes: 0,
       uniqueVoters: 0
     };
 
-    await addDoc(collection(db, POLLS_COLLECTION), poll);
+    // Use setDoc with the pollId as the document ID instead of addDoc
+    await setDoc(doc(db, POLLS_COLLECTION, pollId), poll);
     return pollId;
   }
 
