@@ -1,231 +1,133 @@
+# React + TypeScript + Vite
+
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+
+Currently, two official plugins are available:
+
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+
 # Voting App
 
-A static React application for creating and sharing voting pools with Firebase backend. Built for GitHub Pages hosting.
+A comprehensive web application for creating and managing voting polls with real-time analytics. Built with React, TypeScript, Firebase, and Tailwind CSS.
 
 ## Features
 
-- **Create Custom Voting Pools**: Set up polls with customizable questions and multiple answer choices
-- **Shareable Links**: Generate unique links for each voting pool
-- **Anonymous Voting**: Support for anonymous participation
-- **Real-time Analytics**: Track votes per option, voting patterns, and timing statistics
-- **Flexible Pool Management**: 
-  - Add/modify questions and answers
-  - Set automatic expiry dates and times
-  - Delete pools when needed
-  - Export poll results as JSON
-- **Timer Display**: Shows countdown until voting closes
-- **Responsive Design**: Works on desktop and mobile devices
-- **GitHub Pages Deployment**: Static hosting ready
+### 🗳️ Poll Creation and Sharing
+- Create polls with multiple questions and customizable answer options
+- Generate unique shareable links for each poll
+- Customizable poll settings (anonymous voting, authentication requirements, etc.)
+
+### 👥 Anonymous & Authenticated Voting
+- Support for both anonymous and authenticated users
+- Option to require authentication for specific polls
+- Real-time vote tracking and updates
+
+### 📊 Advanced Analytics
+- Time-to-vote metrics for each question and answer
+- Real-time voting pattern visualization
+- Comprehensive statistics dashboard with charts
+- Answer distribution analysis with pie charts
+- Voting trends over time
+
+### ⏰ Timer Features
+- Countdown timers for poll expiration
+- Automatic poll closure after expiration
+- Auto-delete functionality with customizable delays
+
+### 🛠️ Poll Management
+- Dashboard for poll creators to manage their polls
+- Export poll data in JSON format
+- Delete polls with confirmation
+- View detailed analytics for each poll
+
+### 🎨 Modern UI/UX
+- Responsive design for all screen sizes
+- Clean, intuitive interface built with Tailwind CSS
+- Real-time updates without page refreshes
+- Smooth animations and transitions
 
 ## Tech Stack
 
-- **Frontend**: React 18 with Vite
+- **Frontend**: React 18 + TypeScript + Vite
 - **Styling**: Tailwind CSS
-- **Icons**: Heroicons
-- **State Management**: React Context + useReducer
-- **Routing**: React Router DOM
-- **Forms**: React Hook Form
-- **Backend**: Firebase Firestore
-- **Authentication**: Firebase Auth (optional)
-- **Deployment**: GitHub Pages via GitHub Actions
+- **Database**: Firebase Firestore
+- **Authentication**: Firebase Auth
+- **Charts**: Recharts
+- **Icons**: Lucide React
+- **Deployment**: GitHub Pages (Static Site)
 
 ## Getting Started
 
 ### Prerequisites
-
-- Node.js 18 or higher
-- npm or yarn
-- Firebase project (for backend)
+- Node.js 18+ 
+- Firebase project with Firestore enabled
 
 ### Installation
 
 1. Clone the repository:
-   ```bash
-   git clone https://github.com/khaled-alabsi/voting.git
-   cd voting
-   ```
+```bash
+git clone https://github.com/yourusername/voting.git
+cd voting
+```
 
 2. Install dependencies:
-   ```bash
-   npm install
-   ```
+```bash
+npm install
+```
 
-3. Set up Firebase:
-   - Create a new Firebase project at [Firebase Console](https://console.firebase.google.com)
-   - Enable Firestore Database
-   - Configure environment variables (see Environment Variables section below)
-   - Set up Firestore security rules
+3. Set up environment variables:
+Create a `.env` file in the root directory with your Firebase configuration:
+```
+VITE_FIREBASE_API_KEY=your_api_key
+VITE_FIREBASE_AUTH_DOMAIN=your_auth_domain
+VITE_FIREBASE_PROJECT_ID=your_project_id
+VITE_FIREBASE_STORAGE_BUCKET=your_storage_bucket
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
+VITE_FIREBASE_APP_ID=your_app_id
+VITE_FIREBASE_MEASUREMENT_ID=your_measurement_id
+```
 
 4. Start the development server:
-   ```bash
-   npm run dev
-   ```
-
-5. Open your browser and navigate to the local development URL
-
-### Environment Variables
-
-This application uses environment variables for Firebase configuration to keep sensitive credentials secure.
-
-#### Local Development Setup
-
-1. Copy the example environment file:
-   ```bash
-   cp .env.example .env
-   ```
-
-2. Fill in your Firebase project credentials in the `.env` file:
-   ```bash
-   VITE_FIREBASE_API_KEY=your-actual-api-key
-   VITE_FIREBASE_AUTH_DOMAIN=your-project-id.firebaseapp.com
-   VITE_FIREBASE_PROJECT_ID=your-project-id
-   VITE_FIREBASE_STORAGE_BUCKET=your-project-id.appspot.com
-   VITE_FIREBASE_MESSAGING_SENDER_ID=123456789012
-   VITE_FIREBASE_APP_ID=1:123456789012:web:abcdef123456789012
-   VITE_FIREBASE_MEASUREMENT_ID=G-XXXXXXXXXX
-   ```
-
-3. Get these values from your Firebase project:
-   - Go to [Firebase Console](https://console.firebase.google.com)
-   - Select your project
-   - Go to Project Settings (gear icon) → General tab
-   - Scroll down to "Your apps" section
-   - Copy the config values from the Firebase SDK snippet
-
-#### CI/CD Setup with GitHub Secrets
-
-For deployment via GitHub Actions, set up the following secrets in your GitHub repository:
-
-1. Go to your repository → Settings → Secrets and variables → Actions
-2. Add the following repository secrets:
-   - `VITE_FIREBASE_API_KEY`
-   - `VITE_FIREBASE_AUTH_DOMAIN`
-   - `VITE_FIREBASE_PROJECT_ID`
-   - `VITE_FIREBASE_STORAGE_BUCKET`
-   - `VITE_FIREBASE_MESSAGING_SENDER_ID`
-   - `VITE_FIREBASE_APP_ID`
-   - `VITE_FIREBASE_MEASUREMENT_ID`
-
-**Important**: 
-- Never commit your `.env` file to version control
-- The `.env` file is already excluded in `.gitignore`
-- Use the `.env.example` file as a template for required variables
-
-### Firestore Security Rules
-
-Set up basic security rules in Firebase Console:
-
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /pools/{document} {
-      allow read, write: if true; // Adjust security as needed
-    }
-  }
-}
-```
-
-## Deployment to GitHub Pages
-
-The app is configured for automatic deployment to GitHub Pages using GitHub Actions.
-
-### Prerequisites
-
-1. **Configure GitHub Pages**: Go to your repository → Settings → Pages
-   - **Source**: "Deploy from a branch" → "GitHub Actions"
-
-2. **Configure Firebase Secrets**: Add the required Firebase environment variables as repository secrets:
-   - Go to your repository → Settings → Secrets and variables → Actions
-   - Add all the Firebase variables listed in the Environment Variables section above
-
-### How Deployment Works
-
-The GitHub Actions workflow (`.github/workflows/deploy.yml`) automatically deploys to GitHub Pages when:
-- Code is pushed to the `main` branch
-- The workflow is manually triggered from the Actions tab
-
-**Important**: The workflow does NOT deploy from pull requests for security reasons. GitHub Pages deployment only occurs from the main branch.
-
-### Deployment Process
-
-1. **Automatic**: Push to `main` branch triggers deployment
-2. **Manual**: Go to Actions tab → Deploy to GitHub Pages → Run workflow
-3. **Your app will be available at**: `https://your-username.github.io/voting/`
-
-### Troubleshooting Deployment Issues
-
-If deployment fails:
-1. Ensure Firebase secrets are configured in repository settings
-2. Check that GitHub Pages is enabled and set to "Deploy from a branch" → "GitHub Actions"
-3. Verify the workflow only runs from `main` branch, not pull requests
-4. Check the Actions tab for detailed error logs
-
-### Manual Deployment
-
-For GitHub Pages direct deployment from main branch:
-
 ```bash
-npm run build:github-pages
+npm run dev
 ```
 
-This builds the app and copies production files to the repository root for GitHub Pages.
+5. Open [http://localhost:5174](http://localhost:5174) in your browser.
 
-For standard deployment (used by GitHub Actions):
+### Building for Production
 
 ```bash
 npm run build
 ```
 
-The built files will be in the `dist` directory.
+The built files will be in the `dist` directory, ready for static hosting.
 
-## Usage
+You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
-### Creating a Pool
+```js
+// eslint.config.js
+import reactX from 'eslint-plugin-react-x'
+import reactDom from 'eslint-plugin-react-dom'
 
-1. Click "Create New Pool" on the homepage
-2. Fill in the pool title and optional description
-3. Configure settings:
-   - Allow anonymous voting (default: enabled)
-   - Set automatic expiry date/time (optional)
-4. Add questions and answer options
-5. Click "Create Pool" to generate the shareable link
-
-### Managing a Pool
-
-1. After creating a pool, you'll be redirected to the management page
-2. Copy the shareable link to distribute to voters
-3. Monitor real-time voting statistics
-4. Update expiry settings or deactivate the pool
-5. Export results as JSON when complete
-6. Delete the pool when no longer needed
-
-### Voting
-
-1. Open the shared voting link
-2. Read the questions and select your answers
-3. Submit your vote
-4. View results (if allowed by pool settings)
-
-## Available Scripts
-
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build locally
-- `npm run lint` - Run ESLint
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature-name`
-3. Make your changes and commit: `git commit -m 'Add feature'`
-4. Push to the branch: `git push origin feature-name`
-5. Submit a pull request
-
-## License
-
-This project is open source and available under the [MIT License](LICENSE).
-
-## Support
-
-For issues and questions, please open an issue on the GitHub repository.
+export default tseslint.config([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+      // Enable lint rules for React
+      reactX.configs['recommended-typescript'],
+      // Enable lint rules for React DOM
+      reactDom.configs.recommended,
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
+```
