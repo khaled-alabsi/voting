@@ -12,7 +12,23 @@ interface DashboardPageProps {
 
 export const DashboardPage = ({ user }: DashboardPageProps) => {
   const [polls, setPolls] = useState<Poll[]>([]);
+  const [stats, setStats] = useState<PollStats[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Helper function to safely convert Firestore timestamp to Date
+  const safeToDate = (timestamp: unknown): Date => {
+    if (!timestamp) return new Date();
+    if (typeof timestamp === 'object' && timestamp !== null && 'toDate' in timestamp && typeof (timestamp as any).toDate === 'function') {
+      return (timestamp as any).toDate();
+    }
+    if (typeof timestamp === 'object' && timestamp !== null && 'seconds' in timestamp && typeof (timestamp as any).seconds === 'number') {
+      return new Date((timestamp as any).seconds * 1000);
+    }
+    if (timestamp instanceof Date) {
+      return timestamp;
+    }
+    return new Date();
+  };
   const [selectedPoll, setSelectedPoll] = useState<Poll | null>(null);
   const [pollStats, setPollStats] = useState<PollStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(false);
@@ -174,7 +190,7 @@ export const DashboardPage = ({ user }: DashboardPageProps) => {
                   <p className="text-sm text-gray-600">This Month</p>
                   <p className="text-2xl font-bold text-gray-900">
                     {polls.filter(poll => {
-                      const pollDate = poll.createdAt.toDate();
+                      const pollDate = safeToDate(poll.createdAt);
                       const now = new Date();
                       return pollDate.getMonth() === now.getMonth() && 
                              pollDate.getFullYear() === now.getFullYear();
@@ -220,7 +236,7 @@ export const DashboardPage = ({ user }: DashboardPageProps) => {
                         <div className="flex items-center space-x-4 text-sm text-gray-500">
                           <span>{poll.questions.length} questions</span>
                           <span>{poll.totalVotes} votes</span>
-                          <span>Created {poll.createdAt.toDate().toLocaleDateString()}</span>
+                          <span>Created {safeToDate(poll.createdAt).toLocaleDateString()}</span>
                         </div>
                       </div>
                       

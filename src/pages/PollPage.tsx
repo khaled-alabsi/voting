@@ -21,6 +21,21 @@ export const PollPage = ({ user }: PollPageProps) => {
   const [submitting, setSubmitting] = useState(false);
   const [showResults, setShowResults] = useState(false);
 
+  // Helper function to safely convert Firestore timestamp to Date
+  const safeToDate = (timestamp: unknown): Date => {
+    if (!timestamp) return new Date();
+    if (typeof timestamp === 'object' && timestamp !== null && 'toDate' in timestamp && typeof (timestamp as any).toDate === 'function') {
+      return (timestamp as any).toDate();
+    }
+    if (typeof timestamp === 'object' && timestamp !== null && 'seconds' in timestamp && typeof (timestamp as any).seconds === 'number') {
+      return new Date((timestamp as any).seconds * 1000);
+    }
+    if (timestamp instanceof Date) {
+      return timestamp;
+    }
+    return new Date();
+  };
+
   useEffect(() => {
     if (!pollId) {
       setError('Poll ID not found');
@@ -168,7 +183,7 @@ export const PollPage = ({ user }: PollPageProps) => {
                 </div>
                 <div className="flex items-center">
                   <Clock className="w-4 h-4 mr-1" />
-                  Created {poll.createdAt.toDate().toLocaleDateString()}
+                  Created {safeToDate(poll.createdAt).toLocaleDateString()}
                 </div>
                 {isExpired && (
                   <span className="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs">

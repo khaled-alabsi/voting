@@ -27,23 +27,22 @@ export class PollService {
     const pollId = uuidv4();
     const now = Timestamp.now();
     
-    // Process questions and answers
-    const questions: Question[] = pollData.questions.map((q, index) => ({
-      id: uuidv4(),
-      text: q.text,
+    const questions: Question[] = pollData.questions.map((question, index) => ({
+      id: `q${index + 1}`,
+      text: question.text,
       order: index,
-      allowNewOptions: q.allowNewOptions,
-      required: q.required
+      allowNewOptions: question.allowNewOptions,
+      required: question.required
     }));
 
     const answers: Answer[] = [];
-    pollData.questions.forEach((q, qIndex) => {
-      q.answers.forEach((answerText, aIndex) => {
+    pollData.questions.forEach((question, questionIndex) => {
+      question.answers.forEach((answerText, answerIndex) => {
         answers.push({
-          id: uuidv4(),
-          questionId: questions[qIndex].id,
+          id: `a${questionIndex + 1}_${answerIndex + 1}`,
+          questionId: `q${questionIndex + 1}`,
           text: answerText,
-          order: aIndex
+          order: answerIndex
         });
       });
     });
@@ -59,52 +58,35 @@ export class PollService {
       questions,
       answers,
       isActive: true,
-      shareableLink: `/poll/${pollId}`, // Use relative path instead of full URL
+      shareableLink: `${window.location.origin}/poll/${pollId}`,
       totalVotes: 0,
       uniqueVoters: 0
     };
 
-    // Clean the poll data to remove any undefined values before saving
-    const cleanPoll = this.removeUndefinedValues(poll);
-
-    // Use setDoc with the pollId as the document ID instead of addDoc
-    await setDoc(doc(db, POLLS_COLLECTION, pollId), cleanPoll);
+    await setDoc(doc(db, POLLS_COLLECTION, pollId), poll);
     return pollId;
   }
 
-  // Helper function to remove undefined values from nested objects
-  private static removeUndefinedValues(obj: unknown): unknown {
-    if (obj === null || typeof obj !== 'object') {
-      return obj;
-    }
-
-    if (Array.isArray(obj)) {
-      return obj.map(item => this.removeUndefinedValues(item));
-    }
-
-    const cleaned: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
-      if (value !== undefined) {
-        cleaned[key] = this.removeUndefinedValues(value);
-      }
-    }
-    return cleaned;
-  }
-
-  // Get poll by ID
-  static async getPollById(pollId: string): Promise<Poll | null> {
+  // Get a poll by ID
+  static async getPoll(pollId: string): Promise<Poll | null> {
     const pollDoc = await getDoc(doc(db, POLLS_COLLECTION, pollId));
     if (pollDoc.exists()) {
-      return { ...pollDoc.data(), id: pollDoc.id } as Poll;
+      return pollDoc.data() as Poll;
     }
     return null;
   }
 
-  // Get polls by creator
-  static async getPollsByCreator(creatorId: string): Promise<Poll[]> {
+  // Get all polls (for admin/dashboard)
+  static async getAllPolls(): Promise<Poll[]> {
+    const querySnapshot = await getDocs(collection(db, POLLS_COLLECTION));
+    return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Poll));
+  }
+
+  // Get polls created by a user
+  static async getPollsByUser(userId: string): Promise<Poll[]> {
     const q = query(
       collection(db, POLLS_COLLECTION),
-      where('creatorId', '==', creatorId),
+      where('createdBy', '==', userId),
       orderBy('createdAt', 'desc')
     );
     
@@ -112,115 +94,35 @@ export class PollService {
     return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Poll));
   }
 
-  // Subscribe to poll changes
-  static subscribeToPoll(pollId: string, callback: (poll: Poll | null) => void) {
-    const pollRef = doc(db, POLLS_COLLECTION, pollId);
-    return onSnapshot(pollRef, (doc) => {
-      if (doc.exists()) {
-        callback({ ...doc.data(), id: doc.id } as Poll);
-      } else {
-        callback(null);
-      }
-    });
-  }
-
-  // Update poll
-  static async updatePoll(pollId: string, updates: Partial<Poll>): Promise<void> {
-    const pollRef = doc(db, POLLS_COLLECTION, pollId);
-    await updateDoc(pollRef, {
-      ...updates,
-      updatedAt: Timestamp.now()
-    });
-  }
-
-  // Delete poll
-  static async deletePoll(pollId: string): Promise<void> {
-    const batch = writeBatch(db);
-    
-    // Delete the poll
-    const pollRef = doc(db, POLLS_COLLECTION, pollId);
-    batch.delete(pollRef);
-    
-    // Delete all votes for this poll
-    const votesQuery = query(
-      collection(db, VOTES_COLLECTION),
-      where('pollId', '==', pollId)
-    );
-    const votesSnapshot = await getDocs(votesQuery);
-    votesSnapshot.docs.forEach(voteDoc => {
-      batch.delete(voteDoc.ref);
-    });
-    
-    await batch.commit();
-  }
-
-  // Add new question to poll
-  static async addQuestion(pollId: string, questionText: string): Promise<void> {
-    const poll = await this.getPollById(pollId);
-    if (!poll) throw new Error('Poll not found');
-
-    const newQuestion: Question = {
-      id: uuidv4(),
-      text: questionText,
-      order: poll.questions.length,
-      allowNewOptions: poll.settings.allowNewOptions,
-      required: false
-    };
-
-    const updatedQuestions = [...poll.questions, newQuestion];
-    await this.updatePoll(pollId, { questions: updatedQuestions });
-  }
-
-  // Add new answer option to question
-  static async addAnswerOption(pollId: string, questionId: string, answerText: string, userId?: string): Promise<void> {
-    const poll = await this.getPollById(pollId);
-    if (!poll) throw new Error('Poll not found');
-
-    const questionAnswers = poll.answers.filter(a => a.questionId === questionId);
-    const newAnswer: Answer = {
-      id: uuidv4(),
-      questionId,
-      text: answerText,
-      order: questionAnswers.length,
-      addedByUser: userId,
-      addedAt: Timestamp.now()
-    };
-
-    const updatedAnswers = [...poll.answers, newAnswer];
-    await this.updatePoll(pollId, { answers: updatedAnswers });
-  }
-
-  // Submit vote
+  // Submit a vote
   static async submitVote(
     pollId: string,
     questionId: string,
     answerId: string,
-    userId?: string,
-    timeToVote?: number
+    userId?: string
   ): Promise<void> {
+    const voteId = uuidv4();
     const vote: Vote = {
-      id: uuidv4(),
+      id: voteId,
       pollId,
       questionId,
       answerId,
       userId,
-      votedAt: Timestamp.now(),
-      timeToVote
+      votedAt: Timestamp.now()
     };
 
     const batch = writeBatch(db);
     
     // Add the vote
-    const voteRef = doc(collection(db, VOTES_COLLECTION));
-    batch.set(voteRef, vote);
+    batch.set(doc(db, VOTES_COLLECTION, voteId), vote);
     
-    // Update poll statistics
+    // Update poll stats
     const pollRef = doc(db, POLLS_COLLECTION, pollId);
     batch.update(pollRef, {
       totalVotes: increment(1),
       updatedAt: Timestamp.now()
     });
-    
+
     await batch.commit();
   }
 
@@ -228,110 +130,146 @@ export class PollService {
   static async getVotesForPoll(pollId: string): Promise<Vote[]> {
     const q = query(
       collection(db, VOTES_COLLECTION),
-      where('pollId', '==', pollId),
-      orderBy('votedAt', 'asc')
+      where('pollId', '==', pollId)
+      // Temporarily removed orderBy to avoid index requirement
+      // orderBy('votedAt', 'asc')
     );
     
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Vote));
+    const votes = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Vote));
+    
+    // Sort in memory instead of at database level
+    return votes.sort((a, b) => {
+      const aTime = a.votedAt?.seconds || 0;
+      const bTime = b.votedAt?.seconds || 0;
+      return aTime - bTime;
+    });
   }
 
-  // Subscribe to votes for a poll
-  static subscribeToVotes(pollId: string, callback: (votes: Vote[]) => void) {
+  // Subscribe to votes for a poll (real-time)
+  static subscribeToVotes(pollId: string, callback: (votes: Vote[]) => void): () => void {
     const q = query(
       collection(db, VOTES_COLLECTION),
-      where('pollId', '==', pollId),
-      orderBy('votedAt', 'asc')
+      where('pollId', '==', pollId)
+      // Temporarily removed orderBy to avoid index requirement
+      // orderBy('votedAt', 'asc')
     );
     
     return onSnapshot(q, (querySnapshot) => {
       const votes = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Vote));
-      callback(votes);
+      
+      // Sort in memory instead of at database level
+      const sortedVotes = votes.sort((a, b) => {
+        const aTime = a.votedAt?.seconds || 0;
+        const bTime = b.votedAt?.seconds || 0;
+        return aTime - bTime;
+      });
+      
+      callback(sortedVotes);
     });
   }
 
-  // Calculate poll statistics
-  static async calculatePollStats(pollId: string): Promise<PollStats> {
-    const [poll, votes] = await Promise.all([
-      this.getPollById(pollId),
-      this.getVotesForPoll(pollId)
-    ]);
+  // Subscribe to a poll (real-time)
+  static subscribeToPoll(pollId: string, callback: (poll: Poll | null) => void): () => void {
+    return onSnapshot(doc(db, POLLS_COLLECTION, pollId), (doc) => {
+      if (doc.exists()) {
+        callback(doc.data() as Poll);
+      } else {
+        callback(null);
+      }
+    });
+  }
 
-    if (!poll) throw new Error('Poll not found');
+  // Check if user has already voted
+  static async hasUserVoted(pollId: string, userId: string): Promise<boolean> {
+    const q = query(
+      collection(db, VOTES_COLLECTION),
+      where('pollId', '==', pollId),
+      where('userId', '==', userId)
+    );
+    
+    const querySnapshot = await getDocs(q);
+    return !querySnapshot.empty;
+  }
 
-    const uniqueVoters = new Set(votes.filter(v => v.userId).map(v => v.userId)).size;
-    const anonymousVotes = votes.filter(v => !v.userId).length;
-    const totalUniqueVoters = uniqueVoters + anonymousVotes;
+  // Get poll statistics
+  static async getPollStats(pollId: string): Promise<PollStats> {
+    const votes = await this.getVotesForPoll(pollId);
+    const poll = await this.getPoll(pollId);
+    
+    if (!poll) {
+      throw new Error('Poll not found');
+    }
 
-    const timeToVoteValues = votes.filter(v => v.timeToVote).map(v => v.timeToVote!);
-    const averageTimeToVote = timeToVoteValues.length > 0 
-      ? timeToVoteValues.reduce((sum, time) => sum + time, 0) / timeToVoteValues.length 
-      : 0;
-
-    // Calculate question statistics
     const questionStats = poll.questions.map(question => {
-      const questionVotes = votes.filter(v => v.questionId === question.id);
-      const questionTimeValues = questionVotes.filter(v => v.timeToVote).map(v => v.timeToVote!);
-      const questionAvgTime = questionTimeValues.length > 0
-        ? questionTimeValues.reduce((sum, time) => sum + time, 0) / questionTimeValues.length
-        : 0;
-
+      const questionVotes = votes.filter(vote => vote.questionId === question.id);
       const answerDistribution: { [answerId: string]: number } = {};
-      poll.answers
-        .filter(a => a.questionId === question.id)
-        .forEach(answer => {
-          answerDistribution[answer.id] = questionVotes.filter(v => v.answerId === answer.id).length;
-        });
+      
+      questionVotes.forEach(vote => {
+        answerDistribution[vote.answerId] = (answerDistribution[vote.answerId] || 0) + 1;
+      });
 
       return {
         questionId: question.id,
         totalVotes: questionVotes.length,
-        averageTimeToVote: questionAvgTime,
+        averageTimeToVote: 0, // TODO: Calculate based on vote timing
         answerDistribution
       };
     });
 
-    // Calculate time to vote by option
     const timeToVoteByOption: { [answerId: string]: number[] } = {};
-    poll.answers.forEach(answer => {
-      const answerVotes = votes.filter(v => v.answerId === answer.id && v.timeToVote);
-      timeToVoteByOption[answer.id] = answerVotes.map(v => v.timeToVote!);
-    });
+    // TODO: Calculate time to vote data
 
-    // Calculate voting pattern over time
     const votingPattern = votes.map(vote => ({
       timestamp: vote.votedAt,
-      cumulativeVotes: votes.filter(v => v.votedAt.toMillis() <= vote.votedAt.toMillis()).length,
+      cumulativeVotes: 1, // TODO: Calculate cumulative votes
       questionId: vote.questionId,
       answerId: vote.answerId
     }));
 
-    return {
+    const stats: PollStats = {
       pollId,
       totalVotes: votes.length,
-      uniqueVoters: totalUniqueVoters,
-      averageTimeToVote,
+      uniqueVoters: new Set(votes.map(vote => vote.userId).filter(Boolean)).size,
+      averageTimeToVote: 0, // TODO: Calculate average
       questionStats,
       timeToVoteByOption,
       votingPattern
     };
+
+    return stats;
   }
 
-  // Check if poll is expired
-  static isPollExpired(poll: Poll): boolean {
-    if (!poll.settings.expiresAt) return false;
-    return Timestamp.now().toMillis() > poll.settings.expiresAt.toMillis();
+  // Delete a poll and all its votes
+  static async deletePoll(pollId: string): Promise<void> {
+    const batch = writeBatch(db);
+    
+    // Delete the poll
+    batch.delete(doc(db, POLLS_COLLECTION, pollId));
+    
+    // Delete all votes for this poll
+    const votes = await this.getVotesForPoll(pollId);
+    votes.forEach(vote => {
+      batch.delete(doc(db, VOTES_COLLECTION, vote.id));
+    });
+
+    await batch.commit();
+  }
+
+  // Update poll
+  static async updatePoll(pollId: string, updates: Partial<Poll>): Promise<void> {
+    await updateDoc(doc(db, POLLS_COLLECTION, pollId), updates);
   }
 
   // Export poll data
   static async exportPollData(pollId: string): Promise<ExportData> {
-    const [poll, votes, stats] = await Promise.all([
-      this.getPollById(pollId),
-      this.getVotesForPoll(pollId),
-      this.calculatePollStats(pollId)
-    ]);
+    const poll = await this.getPoll(pollId);
+    const votes = await this.getVotesForPoll(pollId);
+    const stats = await this.getPollStats(pollId);
 
-    if (!poll) throw new Error('Poll not found');
+    if (!poll) {
+      throw new Error('Poll not found');
+    }
 
     return {
       poll,
@@ -340,5 +278,29 @@ export class PollService {
       exportedAt: Timestamp.now(),
       format: 'json'
     };
+  }
+
+  // Get public polls
+  static async getPublicPolls(): Promise<Poll[]> {
+    const q = query(
+      collection(db, POLLS_COLLECTION),
+      where('isPublic', '==', true),
+      orderBy('createdAt', 'desc')
+    );
+    
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Poll));
+  }
+
+  // Search polls
+  static async searchPolls(searchTerm: string): Promise<Poll[]> {
+    // Note: This is a simple implementation. For better search,
+    // consider using Algolia or similar search service
+    const polls = await this.getPublicPolls();
+    
+    return polls.filter(poll => 
+      poll.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      poll.description?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
   }
 }

@@ -14,6 +14,7 @@ import SimpleDebugPage from './pages/SimpleDebugPage';
 import { AuthModal } from './components/Auth/AuthModal';
 import { Notification } from './components/UI/Notification';
 import { useNotification } from './hooks/useNotification';
+import ErrorBoundary from './components/ErrorBoundary';
 
 function App() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
@@ -62,50 +63,52 @@ function App() {
   }
 
   return (
-    <Router basename={import.meta.env.BASE_URL}>
-      <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700">
-        <Header
-          user={user}
-          onSignIn={() => setShowAuthModal(true)}
-          onSignInAnonymously={handleSignInAnonymously}
-          onSignOut={handleSignOut}
-        />
-        
-        <main className="container mx-auto px-4 py-8">
-          <Routes>
-            <Route path="/" element={<HomePage user={user} onSignInRequired={() => setShowAuthModal(true)} />} />
-            <Route 
-              path="/create" 
-              element={user ? <CreatePollPage user={user} /> : <Navigate to="/" />} 
-            />
-            <Route path="/poll/:pollId" element={<PollPage user={user} />} />
-            <Route 
-              path="/dashboard" 
-              element={user && !user.isAnonymous ? <DashboardPage user={user} /> : <Navigate to="/" />} 
-            />
-            <Route path="/firebase-test" element={<FirebaseTestPage />} />
-            <Route path="/firebase-config" element={<FirebaseConfigPage />} />
-            <Route path="/debug" element={<SimpleDebugPage />} />
-            <Route path="/debug-full" element={<DebugPage />} />
-          </Routes>
-        </main>
-
-        {showAuthModal && (
-          <AuthModal
-            onClose={() => setShowAuthModal(false)}
-            onSuccess={() => {
-              setShowAuthModal(false);
-              showNotification('success', 'Signed in successfully');
-            }}
+    <ErrorBoundary>
+      <Router basename={import.meta.env.BASE_URL}>
+        <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700">
+          <Header
+            user={user}
+            onSignIn={() => setShowAuthModal(true)}
+            onSignInAnonymously={handleSignInAnonymously}
+            onSignOut={handleSignOut}
           />
-        )}
+          
+          <main className="container mx-auto px-4 py-8">
+            <Routes>
+              <Route path="/" element={<HomePage user={user} onSignInRequired={() => setShowAuthModal(true)} />} />
+              <Route 
+                path="/create" 
+                element={user ? <CreatePollPage user={user} /> : <Navigate to="/" />} 
+              />
+              <Route path="/poll/:pollId" element={<PollPage user={user} />} />
+              <Route 
+                path="/dashboard" 
+                element={user && !user.isAnonymous ? <DashboardPage user={user} /> : <Navigate to="/" />} 
+              />
+              <Route path="/firebase-test" element={<FirebaseTestPage />} />
+              <Route path="/firebase-config" element={<FirebaseConfigPage />} />
+              <Route path="/debug" element={<SimpleDebugPage />} />
+              <Route path="/debug-full" element={<DebugPage />} />
+            </Routes>
+          </main>
 
-        <Notification
-          notification={notification}
-          onClose={hideNotification}
-        />
-      </div>
-    </Router>
+          {showAuthModal && (
+            <AuthModal
+              onClose={() => setShowAuthModal(false)}
+              onSuccess={() => {
+                setShowAuthModal(false);
+                showNotification('success', 'Signed in successfully');
+              }}
+            />
+          )}
+
+          <Notification
+            notification={notification}
+            onClose={hideNotification}
+          />
+        </div>
+      </Router>
+    </ErrorBoundary>
   );
 }
 
