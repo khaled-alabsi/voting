@@ -2,7 +2,13 @@
 
 A static React application for creating and sharing voting pools with Firebase backend. Built for GitHub Pages hosting.
 
-> **Note**: This repository has been cleaned with a fresh git history as of the latest commit.
+## Git History Cleanup
+
+This repository includes tools for cleaning git history and removing all branches except main:
+- **`clean-git-history.sh`** - Automated script to clean git history
+- **`GIT_CLEANUP_INSTRUCTIONS.md`** - Detailed instructions for manual cleanup
+
+⚠️ **Warning**: These tools will permanently delete git history and branches. Use with caution.
 
 ## Features
 
