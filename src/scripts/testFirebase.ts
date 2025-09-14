@@ -1,7 +1,7 @@
 import { Timestamp } from 'firebase/firestore';
 import { PollService } from '../services/pollService';
 import { AuthService } from '../services/authService';
-import type { PollFormData, Poll, Question, Answer } from '../types';
+import type { PollFormData, Question, Answer } from '../types';
 
 // Dummy data for testing
 const dummyPolls: PollFormData[] = [
