@@ -13,8 +13,7 @@ dist-ssr
 *.local
 
 # Built assets should stay in dist/ directory only
-# Ignore any manually built files in the root
-/index.html
+# Ignore any manually built files in the root (but not the source template)
 /assets/
 /vite.svg
 
