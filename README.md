@@ -53,7 +53,7 @@ A static React application for creating and sharing voting pools with Firebase b
 3. Set up Firebase:
    - Create a new Firebase project at [Firebase Console](https://console.firebase.google.com)
    - Enable Firestore Database
-   - Update `src/firebase.js` with your Firebase configuration
+   - Configure environment variables (see Environment Variables section below)
    - Set up Firestore security rules
 
 4. Start the development server:
@@ -63,20 +63,53 @@ A static React application for creating and sharing voting pools with Firebase b
 
 5. Open your browser and navigate to the local development URL
 
-### Firebase Configuration
+### Environment Variables
 
-Update the Firebase configuration in `src/firebase.js`:
+This application uses environment variables for Firebase configuration to keep sensitive credentials secure.
 
-```javascript
-const firebaseConfig = {
-  apiKey: "your-api-key",
-  authDomain: "your-project.firebaseapp.com",
-  projectId: "your-project-id",
-  storageBucket: "your-project.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "your-app-id"
-};
-```
+#### Local Development Setup
+
+1. Copy the example environment file:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Fill in your Firebase project credentials in the `.env` file:
+   ```bash
+   VITE_FIREBASE_API_KEY=your-actual-api-key
+   VITE_FIREBASE_AUTH_DOMAIN=your-project-id.firebaseapp.com
+   VITE_FIREBASE_PROJECT_ID=your-project-id
+   VITE_FIREBASE_STORAGE_BUCKET=your-project-id.appspot.com
+   VITE_FIREBASE_MESSAGING_SENDER_ID=123456789012
+   VITE_FIREBASE_APP_ID=1:123456789012:web:abcdef123456789012
+   VITE_FIREBASE_MEASUREMENT_ID=G-XXXXXXXXXX
+   ```
+
+3. Get these values from your Firebase project:
+   - Go to [Firebase Console](https://console.firebase.google.com)
+   - Select your project
+   - Go to Project Settings (gear icon) → General tab
+   - Scroll down to "Your apps" section
+   - Copy the config values from the Firebase SDK snippet
+
+#### CI/CD Setup with GitHub Secrets
+
+For deployment via GitHub Actions, set up the following secrets in your GitHub repository:
+
+1. Go to your repository → Settings → Secrets and variables → Actions
+2. Add the following repository secrets:
+   - `VITE_FIREBASE_API_KEY`
+   - `VITE_FIREBASE_AUTH_DOMAIN`
+   - `VITE_FIREBASE_PROJECT_ID`
+   - `VITE_FIREBASE_STORAGE_BUCKET`
+   - `VITE_FIREBASE_MESSAGING_SENDER_ID`
+   - `VITE_FIREBASE_APP_ID`
+   - `VITE_FIREBASE_MEASUREMENT_ID`
+
+**Important**: 
+- Never commit your `.env` file to version control
+- The `.env` file is already excluded in `.gitignore`
+- Use the `.env.example` file as a template for required variables
 
 ### Firestore Security Rules
 
