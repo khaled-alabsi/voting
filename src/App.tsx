@@ -7,6 +7,8 @@ import { HomePage } from './pages/HomePage';
 import { CreatePollPage } from './pages/CreatePollPage';
 import { PollPage } from './pages/PollPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { FirebaseTestPage } from './pages/FirebaseTestPage';
+import { FirebaseConfigPage } from './pages/FirebaseConfigPage';
 import { AuthModal } from './components/Auth/AuthModal';
 import { Notification } from './components/UI/Notification';
 import { useNotification } from './hooks/useNotification';
@@ -79,6 +81,8 @@ function App() {
               path="/dashboard" 
               element={user && !user.isAnonymous ? <DashboardPage user={user} /> : <Navigate to="/" />} 
             />
+            <Route path="/firebase-test" element={<FirebaseTestPage />} />
+            <Route path="/firebase-config" element={<FirebaseConfigPage />} />
           </Routes>
         </main>
 

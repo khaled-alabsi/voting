@@ -48,13 +48,19 @@ export class AuthService {
     const userDoc = await getDoc(userRef);
     
     if (!userDoc.exists()) {
-      const userData: User = {
+      const userData: Partial<User> = {
         id: user.uid,
-        email: user.email || undefined,
-        displayName: user.displayName || undefined,
         isAnonymous,
         createdAt: Timestamp.now()
       };
+      
+      // Only add email and displayName if they exist
+      if (user.email) {
+        userData.email = user.email;
+      }
+      if (user.displayName) {
+        userData.displayName = user.displayName;
+      }
       
       await setDoc(userRef, userData);
     }

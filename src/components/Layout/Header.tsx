@@ -24,6 +24,9 @@ export const Header = ({ user, onSignIn, onSignInAnonymously, onSignOut }: Heade
             <Link to="/" className="text-white/80 hover:text-white transition-colors duration-200">
               Home
             </Link>
+            <Link to="/firebase-test" className="text-white/80 hover:text-white transition-colors duration-200 text-sm">
+              🔥 Test DB
+            </Link>
             {user && (
               <>
                 <Link 
