@@ -1,7 +1,7 @@
 import { Timestamp } from 'firebase/firestore';
 import { PollService } from '../services/pollService';
 import { AuthService } from '../services/authService';
-import type { PollFormData } from '../types';
+import type { PollFormData, Poll, Question, Answer } from '../types';
 
 // Dummy data for testing
 const dummyPolls: PollFormData[] = [
@@ -146,10 +146,10 @@ export class FirebaseTestService {
           console.log(`   - Expires: ${poll.settings.expiresAt?.toDate().toLocaleString() || 'Never'}`);
           
           console.log(`❓ Questions (${poll.questions.length}):`);
-          poll.questions.forEach((question, index) => {
+          poll.questions.forEach((question: Question, index: number) => {
             console.log(`   ${index + 1}. ${question.text}`);
-            const questionAnswers = poll.answers.filter(a => a.questionId === question.id);
-            questionAnswers.forEach((answer, answerIndex) => {
+            const questionAnswers = poll.answers.filter((a: Answer) => a.questionId === question.id);
+            questionAnswers.forEach((answer: Answer, answerIndex: number) => {
               console.log(`      ${String.fromCharCode(97 + answerIndex)}. ${answer.text}`);
             });
           });
@@ -163,7 +163,7 @@ export class FirebaseTestService {
         const testPoll = await PollService.getPollById(createdPolls[0]);
         if (testPoll && testPoll.questions.length > 0) {
           const firstQuestion = testPoll.questions[0];
-          const firstAnswer = testPoll.answers.find(a => a.questionId === firstQuestion.id);
+          const firstAnswer = testPoll.answers.find((a: Answer) => a.questionId === firstQuestion.id);
           
           if (firstAnswer) {
             console.log(`🗳️  Casting a test vote...`);

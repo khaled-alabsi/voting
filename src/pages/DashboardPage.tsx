@@ -12,7 +12,6 @@ interface DashboardPageProps {
 
 export const DashboardPage = ({ user }: DashboardPageProps) => {
   const [polls, setPolls] = useState<Poll[]>([]);
-  const [stats, setStats] = useState<PollStats[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Helper function to safely convert Firestore timestamp to Date

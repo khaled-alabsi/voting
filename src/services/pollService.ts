@@ -67,6 +67,11 @@ export class PollService {
     return pollId;
   }
 
+  // Get a poll by ID (alias for getPoll)
+  static async getPollById(pollId: string): Promise<Poll | null> {
+    return this.getPoll(pollId);
+  }
+
   // Get a poll by ID
   static async getPoll(pollId: string): Promise<Poll | null> {
     const pollDoc = await getDoc(doc(db, POLLS_COLLECTION, pollId));
