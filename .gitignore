@@ -12,9 +12,11 @@ dist
 dist-ssr
 *.local
 
-# Don't ignore built assets when copied to root for GitHub Pages
-!assets/
-!vite.svg
+# Built assets should stay in dist/ directory only
+# Ignore any manually built files in the root
+/index.html
+/assets/
+/vite.svg
 
 # Environment variables
 .env
