@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { db, auth } from '../lib/firebase';
+import { db, auth, isFirebaseConfigured } from '../lib/firebase';
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 
 interface FirebaseConfig {
@@ -24,6 +24,12 @@ const DebugPage: React.FC = () => {
 
   const testFirebaseConnection = async () => {
     try {
+      if (!isFirebaseConfigured) {
+        setConnectionStatus('❌ Firebase not configured - using demo configuration');
+        setPollTestResult('❌ Cannot test polls - Firebase not configured');
+        return;
+      }
+
       // Test Firestore connection
       const pollsRef = collection(db, 'polls');
       const snapshot = await getDocs(pollsRef);
@@ -65,6 +71,23 @@ const DebugPage: React.FC = () => {
           <h1 className="text-3xl font-bold text-white mb-8">🔧 Debug Page</h1>
           
           <div className="space-y-6">
+            {/* Firebase Configuration Status */}
+            <div className="bg-black/20 rounded-xl p-6">
+              <h2 className="text-xl font-semibold text-white mb-4">Firebase Configuration Status</h2>
+              <div className="text-gray-300">
+                Status: {isFirebaseConfigured ? (
+                  <span className="text-green-400">✅ Properly configured</span>
+                ) : (
+                  <div>
+                    <span className="text-red-400">❌ Using demo configuration</span>
+                    <p className="text-sm mt-2 text-yellow-300">
+                      GitHub secrets are not configured properly. The app is running with demo Firebase config.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* Environment Variables */}
             <div className="bg-black/20 rounded-xl p-6">
               <h2 className="text-xl font-semibold text-white mb-4">Environment Variables</h2>
