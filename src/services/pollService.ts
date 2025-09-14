@@ -15,6 +15,7 @@ import {
 } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
 import { db } from '../lib/firebase';
+import { getPollUrl } from '../config/site';
 import type { Poll, Vote, Question, Answer, PollFormData, PollStats, ExportData } from '../types';
 
 // Collections
@@ -58,7 +59,7 @@ export class PollService {
       questions,
       answers,
       isActive: true,
-      shareableLink: `${window.location.origin}/poll/${pollId}`,
+      shareableLink: getPollUrl(pollId),
       totalVotes: 0,
       uniqueVoters: 0
     };
