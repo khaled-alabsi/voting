@@ -113,8 +113,7 @@ export const PollPage = ({ user }: PollPageProps) => {
 
     setSubmitting(true);
     try {
-      const timeToVote = votingSession?.timeSpent[questionId] || 0;
-      await PollService.submitVote(poll.id, questionId, answerId, user.uid, timeToVote);
+      await PollService.submitVote(poll.id, questionId, answerId, user.uid);
       
       // Remove this question from voting session
       if (votingSession) {

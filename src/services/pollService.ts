@@ -86,7 +86,7 @@ export class PollService {
   static async getPollsByUser(userId: string): Promise<Poll[]> {
     const q = query(
       collection(db, POLLS_COLLECTION),
-      where('createdBy', '==', userId),
+      where('creatorId', '==', userId),
       orderBy('createdAt', 'desc')
     );
     
@@ -284,12 +284,28 @@ export class PollService {
   static async getPublicPolls(): Promise<Poll[]> {
     const q = query(
       collection(db, POLLS_COLLECTION),
-      where('isPublic', '==', true),
+      where('isActive', '==', true),
       orderBy('createdAt', 'desc')
     );
     
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Poll));
+  }
+
+  // Get polls created by a user (alias for getPollsByUser)
+  static async getPollsByCreator(userId: string): Promise<Poll[]> {
+    return this.getPollsByUser(userId);
+  }
+
+  // Calculate poll statistics (alias for getPollStats)
+  static async calculatePollStats(pollId: string): Promise<PollStats> {
+    return this.getPollStats(pollId);
+  }
+
+  // Check if poll is expired
+  static isPollExpired(poll: Poll): boolean {
+    if (!poll.settings.expiresAt) return false;
+    return new Date() > poll.settings.expiresAt.toDate();
   }
 
   // Search polls
