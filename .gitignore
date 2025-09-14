@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+# Don't ignore built assets when copied to root for GitHub Pages
+!assets/
+!vite.svg
+
 # Environment variables
 .env
 .env.local

@@ -132,23 +132,37 @@ The app is configured for automatic deployment to GitHub Pages using GitHub Acti
 
 ### Prerequisites
 
-1. **Enable GitHub Pages**: Go to your repository → Settings → Pages
-   - Source: Deploy from a branch → GitHub Actions
-   - Or ensure GitHub Pages is enabled with Actions as the source
+1. **Configure GitHub Pages**: Go to your repository → Settings → Pages
+   - **Option A (Recommended)**: Source: "Deploy from a branch" → "GitHub Actions"
+   - **Option B**: Source: "Deploy from a branch" → "main" → "/ (root)"
 
-2. **Configure Firebase Secrets**: Add the required Firebase environment variables as repository secrets:
+2. **Configure Firebase Secrets** (if using GitHub Actions): Add the required Firebase environment variables as repository secrets:
    - Go to your repository → Settings → Secrets and variables → Actions
    - Add all the Firebase variables listed in the Environment Variables section above
 
-### Automatic Deployment
+### Deployment Options
 
+#### Option A: GitHub Actions (Recommended)
 1. Push your code to the `main` branch
 2. GitHub Actions will automatically build and deploy to GitHub Pages
 3. Your app will be available at: `https://your-username.github.io/voting/`
 
+#### Option B: Direct Branch Deployment
+1. Run `npm run build:github-pages` to build and copy files to root
+2. Commit and push the changes to the `main` branch
+3. GitHub Pages will serve the files directly from the repository root
+
 ### Manual Deployment
 
-To deploy manually:
+For GitHub Pages direct deployment from main branch:
+
+```bash
+npm run build:github-pages
+```
+
+This builds the app and copies production files to the repository root for GitHub Pages.
+
+For standard deployment (used by GitHub Actions):
 
 ```bash
 npm run build
