@@ -130,6 +130,18 @@ service cloud.firestore {
 
 The app is configured for automatic deployment to GitHub Pages using GitHub Actions.
 
+### Prerequisites
+
+1. **Enable GitHub Pages**: Go to your repository → Settings → Pages
+   - Source: Deploy from a branch → GitHub Actions
+   - Or ensure GitHub Pages is enabled with Actions as the source
+
+2. **Configure Firebase Secrets**: Add the required Firebase environment variables as repository secrets:
+   - Go to your repository → Settings → Secrets and variables → Actions
+   - Add all the Firebase variables listed in the Environment Variables section above
+
+### Automatic Deployment
+
 1. Push your code to the `main` branch
 2. GitHub Actions will automatically build and deploy to GitHub Pages
 3. Your app will be available at: `https://your-username.github.io/voting/`
