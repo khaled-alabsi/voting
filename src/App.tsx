@@ -60,7 +60,7 @@ function App() {
   }
 
   return (
-    <Router>
+    <Router basename={import.meta.env.BASE_URL}>
       <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700">
         <Header
           user={user}
