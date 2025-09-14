@@ -133,24 +133,33 @@ The app is configured for automatic deployment to GitHub Pages using GitHub Acti
 ### Prerequisites
 
 1. **Configure GitHub Pages**: Go to your repository → Settings → Pages
-   - **Option A (Recommended)**: Source: "Deploy from a branch" → "GitHub Actions"
-   - **Option B**: Source: "Deploy from a branch" → "main" → "/ (root)"
+   - **Source**: "Deploy from a branch" → "GitHub Actions"
 
-2. **Configure Firebase Secrets** (if using GitHub Actions): Add the required Firebase environment variables as repository secrets:
+2. **Configure Firebase Secrets**: Add the required Firebase environment variables as repository secrets:
    - Go to your repository → Settings → Secrets and variables → Actions
    - Add all the Firebase variables listed in the Environment Variables section above
 
-### Deployment Options
+### How Deployment Works
 
-#### Option A: GitHub Actions (Recommended)
-1. Push your code to the `main` branch
-2. GitHub Actions will automatically build and deploy to GitHub Pages
-3. Your app will be available at: `https://your-username.github.io/voting/`
+The GitHub Actions workflow (`.github/workflows/deploy.yml`) automatically deploys to GitHub Pages when:
+- Code is pushed to the `main` branch
+- The workflow is manually triggered from the Actions tab
 
-#### Option B: Direct Branch Deployment
-1. Run `npm run build:github-pages` to build and copy files to root
-2. Commit and push the changes to the `main` branch
-3. GitHub Pages will serve the files directly from the repository root
+**Important**: The workflow does NOT deploy from pull requests for security reasons. GitHub Pages deployment only occurs from the main branch.
+
+### Deployment Process
+
+1. **Automatic**: Push to `main` branch triggers deployment
+2. **Manual**: Go to Actions tab → Deploy to GitHub Pages → Run workflow
+3. **Your app will be available at**: `https://your-username.github.io/voting/`
+
+### Troubleshooting Deployment Issues
+
+If deployment fails:
+1. Ensure Firebase secrets are configured in repository settings
+2. Check that GitHub Pages is enabled and set to "Deploy from a branch" → "GitHub Actions"
+3. Verify the workflow only runs from `main` branch, not pull requests
+4. Check the Actions tab for detailed error logs
 
 ### Manual Deployment
 
