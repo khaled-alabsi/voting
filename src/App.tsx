@@ -10,6 +10,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { FirebaseTestPage } from './pages/FirebaseTestPage';
 import { FirebaseConfigPage } from './pages/FirebaseConfigPage';
 import DebugPage from './pages/DebugPage';
+import SimpleDebugPage from './pages/SimpleDebugPage';
 import { AuthModal } from './components/Auth/AuthModal';
 import { Notification } from './components/UI/Notification';
 import { useNotification } from './hooks/useNotification';
@@ -84,7 +85,8 @@ function App() {
             />
             <Route path="/firebase-test" element={<FirebaseTestPage />} />
             <Route path="/firebase-config" element={<FirebaseConfigPage />} />
-            <Route path="/debug" element={<DebugPage />} />
+            <Route path="/debug" element={<SimpleDebugPage />} />
+            <Route path="/debug-full" element={<DebugPage />} />
           </Routes>
         </main>
 

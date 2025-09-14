@@ -18,8 +18,13 @@ const DebugPage: React.FC = () => {
   const [pollTestResult, setPollTestResult] = useState<string>('');
 
   useEffect(() => {
-    testFirebaseConnection();
+    // Simple initialization - just show config first
     showFirebaseConfig();
+    
+    // Delay Firebase connection test to avoid blocking render
+    setTimeout(() => {
+      testFirebaseConnection();
+    }, 1000);
   }, []);
 
   const testFirebaseConnection = async () => {
@@ -46,22 +51,26 @@ const DebugPage: React.FC = () => {
         setPollTestResult(`❌ Poll ${pollId} not found in database`);
       }
     } catch (error) {
-      setConnectionStatus(`❌ Firebase connection failed: ${error}`);
-      setPollTestResult(`❌ Poll test failed: ${error}`);
+      setConnectionStatus(`❌ Firebase connection failed: ${String(error)}`);
+      setPollTestResult(`❌ Poll test failed: ${String(error)}`);
     }
   };
 
   const showFirebaseConfig = () => {
-    const config = {
-      apiKey: import.meta.env.VITE_FIREBASE_API_KEY ? '✅ Set' : '❌ Missing',
-      authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN ? '✅ Set' : '❌ Missing',
-      projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID ? '✅ Set' : '❌ Missing',
-      storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET ? '✅ Set' : '❌ Missing',
-      messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID ? '✅ Set' : '❌ Missing',
-      appId: import.meta.env.VITE_FIREBASE_APP_ID ? '✅ Set' : '❌ Missing',
-      measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID ? '✅ Set' : '❌ Missing',
-    };
-    setFirebaseConfig(config);
+    try {
+      const config = {
+        apiKey: import.meta.env.VITE_FIREBASE_API_KEY ? '✅ Set' : '❌ Missing',
+        authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN ? '✅ Set' : '❌ Missing',
+        projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID ? '✅ Set' : '❌ Missing',
+        storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET ? '✅ Set' : '❌ Missing',
+        messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID ? '✅ Set' : '❌ Missing',
+        appId: import.meta.env.VITE_FIREBASE_APP_ID ? '✅ Set' : '❌ Missing',
+        measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID ? '✅ Set' : '❌ Missing',
+      };
+      setFirebaseConfig(config);
+    } catch (error) {
+      console.error('Error loading Firebase config:', error);
+    }
   };
 
   return (
@@ -91,7 +100,7 @@ const DebugPage: React.FC = () => {
             {/* Environment Variables */}
             <div className="bg-black/20 rounded-xl p-6">
               <h2 className="text-xl font-semibold text-white mb-4">Environment Variables</h2>
-              {firebaseConfig && (
+              {firebaseConfig ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
                   {Object.entries(firebaseConfig).map(([key, value]) => (
                     <div key={key} className="flex justify-between text-gray-300">
@@ -102,6 +111,8 @@ const DebugPage: React.FC = () => {
                     </div>
                   ))}
                 </div>
+              ) : (
+                <p className="text-gray-400">Loading...</p>
               )}
             </div>
 
