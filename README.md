@@ -2,6 +2,8 @@
 
 A static React application for creating and sharing voting pools with Firebase backend. Built for GitHub Pages hosting.
 
+> **Note**: This repository has been cleaned with a fresh git history as of the latest commit.
+
 ## Features
 
 - **Create Custom Voting Pools**: Set up polls with customizable questions and multiple answer choices
