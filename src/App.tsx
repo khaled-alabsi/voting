@@ -13,6 +13,7 @@ import { FirebaseConfigPage } from './pages/FirebaseConfigPage';
 import DebugPage from './pages/DebugPage';
 import SimpleDebugPage from './pages/SimpleDebugPage';
 import { AuthModal } from './components/Auth/AuthModal';
+import { PollHistoryModal } from './components/Modals/PollHistoryModal';
 import { Notification } from './components/UI/Notification';
 import { useNotification } from './hooks/useNotification';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -21,6 +22,7 @@ function App() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showPollHistoryModal, setShowPollHistoryModal] = useState(false);
   const { notification, showNotification, hideNotification } = useNotification();
 
   useEffect(() => {
@@ -72,6 +74,7 @@ function App() {
             onSignIn={() => setShowAuthModal(true)}
             onSignInAnonymously={handleSignInAnonymously}
             onSignOut={handleSignOut}
+            onShowPollHistory={() => setShowPollHistoryModal(true)}
           />
           
           <main className="container mx-auto px-4 py-8">
@@ -107,6 +110,12 @@ function App() {
           <Notification
             notification={notification}
             onClose={hideNotification}
+          />
+
+          {/* Poll History Modal */}
+          <PollHistoryModal
+            isOpen={showPollHistoryModal}
+            onClose={() => setShowPollHistoryModal(false)}
           />
         </div>
       </Router>

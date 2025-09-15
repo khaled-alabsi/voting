@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { User, LogOut, Plus, BarChart3, Menu, X } from 'lucide-react';
+import { User, LogOut, Plus, BarChart3, Menu, X, History } from 'lucide-react';
 import { useState } from 'react';
 import type { User as FirebaseUser } from 'firebase/auth';
 
@@ -8,9 +8,10 @@ interface HeaderProps {
   onSignIn: () => void;
   onSignInAnonymously: () => void;
   onSignOut: () => void;
+  onShowPollHistory?: () => void;
 }
 
-export const Header = ({ user, onSignIn, onSignInAnonymously, onSignOut }: HeaderProps) => {
+export const Header = ({ user, onSignIn, onSignInAnonymously, onSignOut, onShowPollHistory }: HeaderProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
@@ -40,6 +41,13 @@ export const Header = ({ user, onSignIn, onSignInAnonymously, onSignOut }: Heade
                   <Plus className="w-4 h-4 mr-1" />
                   Create Poll
                 </Link>
+                <button
+                  onClick={onShowPollHistory}
+                  className="flex items-center text-gray-700 hover:text-gray-900 transition-colors duration-200"
+                >
+                  <History className="w-4 h-4 mr-1" />
+                  Poll History
+                </button>
                 {!user.isAnonymous && (
                   <Link 
                     to="/dashboard" 
@@ -126,6 +134,16 @@ export const Header = ({ user, onSignIn, onSignInAnonymously, onSignOut }: Heade
                     <Plus className="w-4 h-4 mr-2" />
                     Create Poll
                   </Link>
+                  <button
+                    onClick={() => {
+                      onShowPollHistory?.();
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="flex items-center text-gray-700 hover:text-gray-900 px-4 py-2 transition-colors duration-200 text-left w-full"
+                  >
+                    <History className="w-4 h-4 mr-2" />
+                    Poll History
+                  </button>
                   {!user.isAnonymous && (
                     <Link 
                       to="/dashboard" 

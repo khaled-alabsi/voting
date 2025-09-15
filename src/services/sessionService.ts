@@ -232,7 +232,7 @@ export class SessionService {
   }
 
   /**
-   * Get user's poll history
+   * Get user's poll history with full poll details
    */
   static async getUserPollHistory(): Promise<PollHistory | null> {
     const sessionToken = this.getCurrentSessionToken();
@@ -256,18 +256,46 @@ export class SessionService {
         }
       }
 
-      const polls = Array.from(pollMap.values()).map(session => ({
-        pollId: session.pollId,
-        role: session.role,
-        lastAccessed: session.lastActivity,
-        status: 'active' as const, // Would need to check poll expiration
-        title: 'Loading...' // Would need to fetch poll titles
-      }));
+      // Fetch poll details for each unique poll
+      const pollsWithDetails = await Promise.all(
+        Array.from(pollMap.values()).map(async (session) => {
+          try {
+            const pollDoc = await getDoc(doc(db, 'polls', session.pollId));
+            const pollData = pollDoc.data();
+            
+            // Determine status based on expiration
+            let status: 'active' | 'completed' | 'expired' = 'active';
+            if (pollData?.settings?.expiresAt) {
+              const expirationDate = pollData.settings.expiresAt.toDate();
+              if (expirationDate < new Date()) {
+                status = 'expired';
+              }
+            }
+
+            return {
+              pollId: session.pollId,
+              role: session.role,
+              lastAccessed: session.lastActivity,
+              status,
+              title: pollData?.title || 'Unknown Poll'
+            };
+          } catch (error) {
+            console.error(`Failed to fetch poll ${session.pollId}:`, error);
+            return {
+              pollId: session.pollId,
+              role: session.role,
+              lastAccessed: session.lastActivity,
+              status: 'expired' as const,
+              title: 'Poll Not Found'
+            };
+          }
+        })
+      );
 
       return {
         userId: AuthService.getCurrentUser()?.uid,
         sessionToken,
-        polls
+        polls: pollsWithDetails
       };
     } catch (error) {
       console.error('Failed to get poll history:', error);
@@ -341,6 +369,44 @@ export class SessionService {
       
       // Clear cookie
       CookieService.deleteCookie(this.SESSION_COOKIE_NAME);
+    }
+  }
+
+  /**
+   * Get all polls created by the current user (admin functionality)
+   */
+  static async getCreatedPolls(): Promise<Array<{pollId: string, title: string, createdAt: Timestamp, status: string}>> {
+    const currentUser = AuthService.getCurrentUser();
+    if (!currentUser) return [];
+
+    try {
+      const q = query(
+        collection(db, 'polls'),
+        where('creatorId', '==', currentUser.uid),
+        orderBy('createdAt', 'desc')
+      );
+      
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        let status = 'active';
+        if (data.settings?.expiresAt) {
+          const expirationDate = data.settings.expiresAt.toDate();
+          if (expirationDate < new Date()) {
+            status = 'expired';
+          }
+        }
+        
+        return {
+          pollId: doc.id,
+          title: data.title || 'Untitled Poll',
+          createdAt: data.createdAt,
+          status
+        };
+      });
+    } catch (error) {
+      console.error('Failed to get created polls:', error);
+      return [];
     }
   }
 }

@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Plus, Users, BarChart3, Clock } from 'lucide-react';
 import type { User as FirebaseUser } from 'firebase/auth';
 import { PollService } from '../services/pollService';
-import type { PollFormData } from '../types';
+import { PollTemplatesService, type PollTemplate } from '../services/pollTemplatesService';
+import { PollTemplateModal } from '../components/Modals/PollTemplateModal';
 
 interface HomePageProps {
   user?: FirebaseUser | null;
@@ -12,6 +14,7 @@ interface HomePageProps {
 
 export const HomePage = ({ user, onSignInRequired, onSignInAnonymously }: HomePageProps) => {
   const navigate = useNavigate();
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
 
   const handleCreatePollClick = async (e: React.MouseEvent) => {
     if (!user) {
@@ -33,34 +36,22 @@ export const HomePage = ({ user, onSignInRequired, onSignInAnonymously }: HomePa
   };
 
   const handleDemoPollClick = async () => {
-    try {
-      // Create a demo poll
-      const demoPollData: PollFormData = {
-        title: 'Demo: Favorite Programming Language',
-        description: 'This is a demo poll to showcase our voting platform. Try voting and see the real-time results!',
-        settings: {
-          allowAnonymousVoting: true,
-          requireAuthentication: false,
-          allowNewQuestions: false,
-          allowNewOptions: false,
-          showResultsToVoters: true,
-          autoDelete: false
-        },
-        questions: [
-          {
-            text: 'What is your favorite programming language?',
-            answers: ['JavaScript', 'Python', 'TypeScript', 'Java', 'C++'],
-            allowNewOptions: false,
-            required: true
-          }
-        ]
-      };
+    setShowTemplateModal(true);
+  };
 
-      const pollId = await PollService.createPoll(demoPollData, 'demo-user');
+  const handleTemplateSelect = async (template: PollTemplate) => {
+    try {
+      // Create poll from template
+      const pollData = PollTemplatesService.createPollFromTemplate(template.id);
+      if (!pollData) {
+        throw new Error('Failed to load template data');
+      }
+
+      const pollId = await PollService.createPoll(pollData, user?.uid || 'demo-user');
       navigate(`/poll/${pollId}`);
     } catch (error) {
-      console.error('Failed to create demo poll:', error);
-      alert('Failed to create demo poll. Please try again.');
+      console.error('Failed to create poll from template:', error);
+      alert('Failed to create poll from template. Please try again.');
     }
   };
 
@@ -93,7 +84,7 @@ export const HomePage = ({ user, onSignInRequired, onSignInAnonymously }: HomePa
               className="bg-white text-gray-700 font-semibold py-4 px-8 rounded-lg shadow-md border border-gray-200 hover:bg-gray-50 hover:shadow-lg transform hover:scale-105 transition-all duration-200 text-lg inline-flex items-center"
             >
               <BarChart3 className="w-5 h-5 mr-2" />
-              View Demo Poll
+              Browse Poll Templates
             </button>
           </div>
         </div>
@@ -194,6 +185,13 @@ export const HomePage = ({ user, onSignInRequired, onSignInAnonymously }: HomePa
           Create Free Poll
         </Link>
       </section>
+
+      {/* Poll Template Modal */}
+      <PollTemplateModal
+        isOpen={showTemplateModal}
+        onClose={() => setShowTemplateModal(false)}
+        onSelectTemplate={handleTemplateSelect}
+      />
     </div>
   );
 };
