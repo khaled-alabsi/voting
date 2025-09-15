@@ -106,11 +106,12 @@ export class SessionService {
       const sessionId = uuidv4();
       console.log('Generated session ID:', sessionId);
       
+      const resolvedName = name || 'Anonymous';
       const sessionData = {
         id: sessionId,
         pollId,
         role,
-        userName: name || 'Anonymous',
+        userName: resolvedName,
         joinedAt: new Date(),
         lastActivity: new Date(),
         status: 'active' as const
@@ -134,13 +135,13 @@ export class SessionService {
         currentQuestionIndex: 0,
         answers: {},
         timeSpent: {},
-        voterName: name
+        voterName: resolvedName
       };
       console.log('Created voting session object:', votingSession);
 
       // Track visitor analytics
       console.log('Tracking visitor...');
-      await this.trackVisitor(pollId, role);
+      await this.trackVisitor(pollId, sessionId, resolvedName);
       console.log('Successfully tracked visitor');
 
       return votingSession;
