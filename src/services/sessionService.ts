@@ -8,7 +8,6 @@ import {
   where,
   orderBy,
   updateDoc,
-  deleteDoc,
   onSnapshot,
   Timestamp,
   writeBatch
@@ -204,7 +203,10 @@ export class SessionService {
       );
       
       const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PollVisitor));
+      return querySnapshot.docs.map(doc => ({ 
+        id: doc.id, 
+        ...doc.data() 
+      } as PollVisitor & { id: string }));
     } catch (error) {
       console.error('Failed to get poll visitors:', error);
       return [];
@@ -221,7 +223,10 @@ export class SessionService {
     );
 
     return onSnapshot(q, (querySnapshot) => {
-      const visitors = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PollVisitor));
+      const visitors = querySnapshot.docs.map(doc => ({ 
+        id: doc.id, 
+        ...doc.data() 
+      } as PollVisitor & { id: string }));
       callback(visitors);
     });
   }
