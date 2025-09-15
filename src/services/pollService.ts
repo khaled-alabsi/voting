@@ -95,14 +95,22 @@ export class PollService {
 
   // Get polls created by a user
   static async getPollsByUser(userId: string): Promise<Poll[]> {
+    // Note: Using a simple query to avoid composite index requirements
+    // In production, you might want to create the composite index for better performance
     const q = query(
       collection(db, POLLS_COLLECTION),
-      where('creatorId', '==', userId),
-      orderBy('createdAt', 'desc')
+      where('creatorId', '==', userId)
     );
-    
+
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Poll));
+    const polls = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Poll));
+
+    // Sort by createdAt in descending order (most recent first)
+    return polls.sort((a, b) => {
+      const aTime = a.createdAt?.toMillis?.() || 0;
+      const bTime = b.createdAt?.toMillis?.() || 0;
+      return bTime - aTime;
+    });
   }
 
   // Submit a vote
