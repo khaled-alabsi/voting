@@ -123,10 +123,27 @@ export class SessionService {
       await addDoc(collection(db, 'sessions'), sessionData);
       console.log('Successfully saved session to Firestore');
 
+      // Also save to poll sessions collection for history tracking
+      console.log('Saving poll session for history tracking...');
+      const pollSessionData = {
+        sessionId: sessionId,
+        pollId,
+        role,
+        userName: resolvedName,
+        joinedAt: Timestamp.now(),
+        lastActivity: Timestamp.now(),
+        hasVoted: false
+      };
+      await addDoc(collection(db, POLL_SESSIONS_COLLECTION), pollSessionData);
+      console.log('Successfully saved poll session to Firestore');
+
       // Save to cookies for tracking
       console.log('Saving session to cookies...');
       CookieService.setCookie(`session_${pollId}`, sessionId, 30);
       CookieService.setCookie(`session_${pollId}_data`, JSON.stringify(sessionData), 30);
+      
+      // Also save as global session token for history lookup
+      CookieService.setCookie(this.SESSION_COOKIE_NAME, sessionId, this.SESSION_DURATION);
       console.log('Successfully saved session to cookies');
 
       const votingSession: VotingSession = {
@@ -280,18 +297,50 @@ export class SessionService {
    * Get user's poll history with full poll details
    */
   static async getUserPollHistory(): Promise<PollHistory | null> {
-    const sessionToken = this.getCurrentSessionToken();
-    if (!sessionToken) return null;
-
+    console.log('getUserPollHistory called');
+    
     try {
-      const q = query(
-        collection(db, POLL_SESSIONS_COLLECTION),
-        where('sessionId', '==', sessionToken),
-        orderBy('lastActivity', 'desc')
-      );
+      // Get current user
+      const currentUser = AuthService.getCurrentUser();
+      console.log('Current user:', currentUser?.uid);
       
-      const querySnapshot = await getDocs(q);
-      const pollSessions = querySnapshot.docs.map(doc => doc.data() as PollSession);
+      if (!currentUser) {
+        console.log('No current user found');
+        return null;
+      }
+
+      console.log('Querying poll sessions collection by user...');
+      // For now, let's get all sessions from cookies to find user's polls
+      const pollSessions: PollSession[] = [];
+      
+      // Get all cookies starting with 'session_'
+      const allCookies = document.cookie.split(';');
+      console.log('All cookies:', allCookies.length);
+      
+      for (const cookie of allCookies) {
+        const [name, value] = cookie.trim().split('=');
+        if (name.startsWith('session_') && name.endsWith('_data') && value) {
+          try {
+            const sessionData = JSON.parse(decodeURIComponent(value));
+            console.log('Found session from cookie:', sessionData);
+            pollSessions.push({
+              id: sessionData.id,
+              sessionId: sessionData.id,
+              pollId: sessionData.pollId,
+              role: sessionData.role,
+              voterName: sessionData.userName,
+              joinedAt: sessionData.joinedAt,
+              lastActivity: sessionData.lastActivity,
+              hasVoted: false,
+              isActive: true
+            });
+          } catch (error) {
+            console.error('Failed to parse session cookie:', error);
+          }
+        }
+      }
+      
+      console.log('Poll sessions from cookies:', pollSessions.length);
 
       // Group by poll and get latest session for each
       const pollMap = new Map();
@@ -317,10 +366,22 @@ export class SessionService {
               }
             }
 
+            // Convert lastActivity to Timestamp, handling both string and Date formats
+            let lastAccessedTimestamp: Timestamp;
+            try {
+              const lastActivityDate = session.lastActivity instanceof Date 
+                ? session.lastActivity 
+                : new Date(session.lastActivity);
+              lastAccessedTimestamp = Timestamp.fromDate(lastActivityDate);
+            } catch {
+              console.warn('Failed to parse lastActivity date:', session.lastActivity);
+              lastAccessedTimestamp = Timestamp.now();
+            }
+
             return {
               pollId: session.pollId,
               role: session.role,
-              lastAccessed: session.lastActivity,
+              lastAccessed: lastAccessedTimestamp,
               status,
               title: pollData?.title || 'Unknown Poll'
             };
@@ -339,7 +400,7 @@ export class SessionService {
 
       return {
         userId: AuthService.getCurrentUser()?.uid,
-        sessionToken,
+        sessionToken: this.getCurrentSessionToken() || 'cookie-based-session',
         polls: pollsWithDetails
       };
     } catch (error) {
