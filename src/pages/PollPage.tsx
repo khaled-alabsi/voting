@@ -139,9 +139,9 @@ export const PollPage = ({ user }: PollPageProps) => {
       });
       
       console.log('Joining poll session...');
-      // Update session with voter role and name - this is crucial for poll history
-      await SessionService.joinPoll(poll.id, 'voter', voterName);
-      console.log('Successfully joined poll session');
+      // Update existing session role from viewer to voter - this is crucial for poll history
+      await SessionService.updateSessionRole(poll.id, 'voter', voterName);
+      console.log('Successfully updated session role to voter');
       
       // Close the modal after successful setup
       setShowNameEntry(false);

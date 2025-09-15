@@ -94,18 +94,27 @@ export class SessionService {
    */
   static async joinPoll(pollId: string, role: 'creator' | 'voter' | 'viewer', name?: string): Promise<VotingSession> {
     console.log('SessionService.joinPoll called with:', { pollId, role, name });
-    
+
     try {
       console.log('Attempting to join poll session...');
-      
+
       // Check if Firebase is configured
       const auth = getAuth();
       console.log('Firebase auth instance:', !!auth);
       console.log('Current user:', auth.currentUser?.uid);
-      
-      const sessionId = uuidv4();
-      console.log('Generated session ID:', sessionId);
-      
+
+      // Check if we already have a session for this poll
+      const existingSessionId = CookieService.getCookie(`session_${pollId}`);
+      let sessionId: string;
+
+      if (existingSessionId) {
+        console.log('Using existing session ID:', existingSessionId);
+        sessionId = existingSessionId;
+      } else {
+        sessionId = uuidv4();
+        console.log('Generated new session ID:', sessionId);
+      }
+
       const resolvedName = name || 'Anonymous';
       const sessionData = {
         id: sessionId,
@@ -141,7 +150,7 @@ export class SessionService {
       console.log('Saving session to cookies...');
       CookieService.setCookie(`session_${pollId}`, sessionId, 30);
       CookieService.setCookie(`session_${pollId}_data`, JSON.stringify(sessionData), 30);
-      
+
       // Also save as global session token for history lookup
       CookieService.setCookie(this.SESSION_COOKIE_NAME, sessionId, this.SESSION_DURATION);
       console.log('Successfully saved session to cookies');
@@ -156,10 +165,14 @@ export class SessionService {
       };
       console.log('Created voting session object:', votingSession);
 
-      // Track visitor analytics
-      console.log('Tracking visitor...');
-      await this.trackVisitor(pollId, sessionId, resolvedName);
-      console.log('Successfully tracked visitor');
+      // Track visitor only if this is a new session (not existing)
+      if (!existingSessionId) {
+        console.log('Tracking new visitor...');
+        await this.trackVisitor(pollId, sessionId, resolvedName);
+        console.log('Successfully tracked new visitor');
+      } else {
+        console.log('Visitor already tracked for this session, skipping tracking');
+      }
 
       return votingSession;
     } catch (error) {
@@ -230,30 +243,78 @@ export class SessionService {
    * Mark user as voted
    */
   static async markAsVoted(pollId: string): Promise<void> {
-    const sessionToken = this.getCurrentSessionToken();
-    if (!sessionToken) return;
-
-    const pollSessionId = `${sessionToken}_${pollId}`;
-    const visitorId = `${sessionToken}_${pollId}`;
+    const sessionId = CookieService.getCookie(`session_${pollId}`);
+    if (!sessionId) return;
 
     try {
-      // Update poll session
-      await updateDoc(doc(db, POLL_SESSIONS_COLLECTION, pollSessionId), {
-        hasVoted: true,
-        lastActivity: Timestamp.now()
-      });
+      // Find the existing poll session document by querying
+      const q = query(
+        collection(db, POLL_SESSIONS_COLLECTION),
+        where('sessionId', '==', sessionId),
+        where('pollId', '==', pollId)
+      );
 
-      // Update visitor record
-      await updateDoc(doc(db, POLL_VISITORS_COLLECTION, visitorId), {
-        hasVoted: true,
-        lastSeen: Timestamp.now()
-      });
+      const querySnapshot = await getDocs(q);
+      if (!querySnapshot.empty) {
+        const pollSessionDoc = querySnapshot.docs[0];
+        await updateDoc(pollSessionDoc.ref, {
+          hasVoted: true,
+          lastActivity: Timestamp.now()
+        });
+        console.log('Successfully marked user as voted');
+      }
     } catch (error) {
       console.error('Failed to mark as voted:', error);
     }
   }
 
   /**
+   * Update existing session role (e.g., from viewer to voter)
+   */
+  static async updateSessionRole(pollId: string, newRole: 'creator' | 'voter' | 'viewer', name?: string): Promise<void> {
+    const sessionId = CookieService.getCookie(`session_${pollId}`);
+    if (!sessionId) {
+      throw new Error('No existing session found for this poll');
+    }
+
+    try {
+      const resolvedName = name || 'Anonymous';
+
+      // Find the existing poll session document by querying
+      const q = query(
+        collection(db, POLL_SESSIONS_COLLECTION),
+        where('sessionId', '==', sessionId),
+        where('pollId', '==', pollId)
+      );
+
+      const querySnapshot = await getDocs(q);
+      if (querySnapshot.empty) {
+        throw new Error('Poll session document not found');
+      }
+
+      const pollSessionDoc = querySnapshot.docs[0];
+      await updateDoc(pollSessionDoc.ref, {
+        role: newRole,
+        userName: resolvedName,
+        lastActivity: Timestamp.now()
+      });
+
+      // Update cookie data
+      const existingData = CookieService.getCookie(`session_${pollId}_data`);
+      if (existingData) {
+        const sessionData = JSON.parse(existingData);
+        sessionData.role = newRole;
+        sessionData.userName = resolvedName;
+        sessionData.lastActivity = new Date();
+        CookieService.setCookie(`session_${pollId}_data`, JSON.stringify(sessionData), 30);
+      }
+
+      console.log('Successfully updated session role to:', newRole);
+    } catch (error) {
+      console.error('Failed to update session role:', error);
+      throw error;
+    }
+  }  /**
    * Get poll visitors for admin panel
    */
   static async getPollVisitors(pollId: string): Promise<PollVisitor[]> {
@@ -417,11 +478,17 @@ export class SessionService {
     if (!sessionToken) return false;
 
     try {
-      const pollSessionId = `${sessionToken}_${pollId}`;
-      const sessionDoc = await getDoc(doc(db, POLL_SESSIONS_COLLECTION, pollSessionId));
-      
-      if (sessionDoc.exists()) {
-        return sessionDoc.data().role === 'creator';
+      // Query for poll session instead of assuming document ID format
+      const q = query(
+        collection(db, POLL_SESSIONS_COLLECTION),
+        where('sessionId', '==', sessionToken),
+        where('pollId', '==', pollId)
+      );
+
+      const querySnapshot = await getDocs(q);
+      if (!querySnapshot.empty) {
+        const sessionData = querySnapshot.docs[0].data();
+        return sessionData.role === 'creator';
       }
       return false;
     } catch (error) {
