@@ -105,7 +105,8 @@ export class PollService {
     pollId: string,
     questionId: string,
     answerId: string,
-    userId?: string
+    userId?: string,
+    voterName?: string
   ): Promise<void> {
     const voteId = uuidv4();
     const vote: Vote = {
@@ -114,6 +115,7 @@ export class PollService {
       questionId,
       answerId,
       userId,
+      voterName,
       votedAt: Timestamp.now()
     };
 

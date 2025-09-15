@@ -1,6 +1,8 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Plus, Users, BarChart3, Clock } from 'lucide-react';
 import type { User as FirebaseUser } from 'firebase/auth';
+import { PollService } from '../services/pollService';
+import type { PollFormData } from '../types';
 
 interface HomePageProps {
   user?: FirebaseUser | null;
@@ -9,6 +11,8 @@ interface HomePageProps {
 }
 
 export const HomePage = ({ user, onSignInRequired, onSignInAnonymously }: HomePageProps) => {
+  const navigate = useNavigate();
+
   const handleCreatePollClick = async (e: React.MouseEvent) => {
     if (!user) {
       e.preventDefault();
@@ -18,12 +22,45 @@ export const HomePage = ({ user, onSignInRequired, onSignInAnonymously }: HomePa
           await onSignInAnonymously();
         } catch (error) {
           console.error('Failed to sign in anonymously:', error);
-          // Fallback to showing sign in modal
-          onSignInRequired?.();
+          if (onSignInRequired) {
+            onSignInRequired();
+          }
         }
-      } else {
-        onSignInRequired?.();
+      } else if (onSignInRequired) {
+        onSignInRequired();
       }
+    }
+  };
+
+  const handleDemoPollClick = async () => {
+    try {
+      // Create a demo poll
+      const demoPollData: PollFormData = {
+        title: 'Demo: Favorite Programming Language',
+        description: 'This is a demo poll to showcase our voting platform. Try voting and see the real-time results!',
+        settings: {
+          allowAnonymousVoting: true,
+          requireAuthentication: false,
+          allowNewQuestions: false,
+          allowNewOptions: false,
+          showResultsToVoters: true,
+          autoDelete: false
+        },
+        questions: [
+          {
+            text: 'What is your favorite programming language?',
+            answers: ['JavaScript', 'Python', 'TypeScript', 'Java', 'C++'],
+            allowNewOptions: false,
+            required: true
+          }
+        ]
+      };
+
+      const pollId = await PollService.createPoll(demoPollData, 'demo-user');
+      navigate(`/poll/${pollId}`);
+    } catch (error) {
+      console.error('Failed to create demo poll:', error);
+      alert('Failed to create demo poll. Please try again.');
     }
   };
 
@@ -51,7 +88,10 @@ export const HomePage = ({ user, onSignInRequired, onSignInAnonymously }: HomePa
               <Plus className="w-5 h-5 mr-2" />
               Create Your First Poll
             </Link>
-            <button className="bg-white text-gray-700 font-semibold py-4 px-8 rounded-lg shadow-md border border-gray-200 hover:bg-gray-50 hover:shadow-lg transform hover:scale-105 transition-all duration-200 text-lg inline-flex items-center">
+            <button 
+              onClick={handleDemoPollClick}
+              className="bg-white text-gray-700 font-semibold py-4 px-8 rounded-lg shadow-md border border-gray-200 hover:bg-gray-50 hover:shadow-lg transform hover:scale-105 transition-all duration-200 text-lg inline-flex items-center"
+            >
               <BarChart3 className="w-5 h-5 mr-2" />
               View Demo Poll
             </button>

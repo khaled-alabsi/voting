@@ -20,6 +20,8 @@ export const PollPage = ({ user }: PollPageProps) => {
   const [votingSession, setVotingSession] = useState<VotingSession | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  const [showNameEntry, setShowNameEntry] = useState(false);
+  const [voterName, setVoterName] = useState('Anonymous');
 
   // Helper function to safely convert Firestore timestamp to Date
   const safeToDate = (timestamp: unknown): Date => {
@@ -69,6 +71,13 @@ export const PollPage = ({ user }: PollPageProps) => {
   const startVoting = async () => {
     if (!poll) return;
 
+    // Show name entry modal first
+    setShowNameEntry(true);
+  };
+
+  const beginVotingWithName = async () => {
+    if (!poll) return;
+
     // Check if authentication is required
     if (poll.settings.requireAuthentication && (!user || user.isAnonymous)) {
       alert('This poll requires authentication. Please sign in to vote.');
@@ -91,8 +100,10 @@ export const PollPage = ({ user }: PollPageProps) => {
       startedAt: new Date(),
       currentQuestionIndex: 0,
       answers: {},
-      timeSpent: {}
+      timeSpent: {},
+      voterName: voterName
     });
+    setShowNameEntry(false);
   };
 
   const selectAnswer = (questionId: string, answerId: string) => {
@@ -113,7 +124,7 @@ export const PollPage = ({ user }: PollPageProps) => {
 
     setSubmitting(true);
     try {
-      await PollService.submitVote(poll.id, questionId, answerId, user.uid);
+      await PollService.submitVote(poll.id, questionId, answerId, user.uid, votingSession?.voterName);
       
       // Remove this question from voting session
       if (votingSession) {
@@ -325,6 +336,39 @@ export const PollPage = ({ user }: PollPageProps) => {
           </div>
         )}
       </div>
+
+      {/* Name Entry Modal */}
+      {showNameEntry && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold mb-4">Enter Your Name</h3>
+            <p className="text-gray-600 mb-4">
+              You can enter your name or leave it as "Anonymous" to vote anonymously.
+            </p>
+            <input
+              type="text"
+              value={voterName}
+              onChange={(e) => setVoterName(e.target.value)}
+              placeholder="Your name (optional)"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+            />
+            <div className="flex space-x-3">
+              <button
+                onClick={() => setShowNameEntry(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={beginVotingWithName}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Start Voting
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -5,6 +5,7 @@ import type { User as FirebaseUser } from 'firebase/auth';
 import { PollService } from '../services/pollService';
 import type { PollFormData, QuestionFormData, PollSettings } from '../types';
 import { Timestamp } from 'firebase/firestore';
+import { PollCreatedModal } from '../components/Modals/PollCreatedModal';
 
 interface CreatePollPageProps {
   user: FirebaseUser;
@@ -13,6 +14,8 @@ interface CreatePollPageProps {
 export const CreatePollPage = ({ user }: CreatePollPageProps) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [createdPollId, setCreatedPollId] = useState('');
   const [formData, setFormData] = useState<PollFormData>({
     title: '',
     description: '',
@@ -167,8 +170,9 @@ export const CreatePollPage = ({ user }: CreatePollPageProps) => {
       };
 
       const pollId = await PollService.createPoll(cleanedData, user.uid);
-      // Navigate to management page instead of poll page
-      navigate(`/manage/${pollId}`);
+      // Show success modal instead of navigating away
+      setCreatedPollId(pollId);
+      setShowSuccessModal(true);
     } catch (error) {
       console.error('Error creating poll:', error);
       alert(error instanceof Error ? error.message : 'Failed to create poll');
@@ -471,6 +475,16 @@ export const CreatePollPage = ({ user }: CreatePollPageProps) => {
           </div>
         </form>
       </div>
+
+      {/* Success Modal */}
+      <PollCreatedModal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        pollId={createdPollId}
+        pollTitle={formData.title}
+        onGoToPoll={() => navigate(`/poll/${createdPollId}`)}
+        onViewResults={() => navigate(`/poll/${createdPollId}/results`)}
+      />
     </div>
   );
 };

@@ -18,6 +18,9 @@
 | FR-004 | Poll Management | Poll Settings | Configure poll behavior and access controls | High | ✅ Implemented | Settings for anonymous voting, authentication requirements, expiration |
 | FR-005 | Poll Management | Multiple Question Types | Support different types of questions in polls | Medium | ✅ Implemented | Single choice questions with custom answers |
 | FR-006 | Poll Management | Poll Expiration | Set expiration dates for polls | Medium | ✅ Implemented | Polls can have expiration dates and auto-disable |
+| FR-006.1 | Poll Management | Success Modal | Show success dialog after poll creation with sharing options | Medium | ✅ Implemented | Modal displays share URL, copy functionality, and navigation buttons |
+| FR-006.2 | Voting | Voter Name Field | Optional name field for voters with anonymous default | Medium | ✅ Implemented | Name entry modal before voting with anonymous option |
+| FR-006.3 | Demo | Demo Poll Functionality | Functional "View Demo Poll" button for testing | Medium | ✅ Implemented | Button creates and navigates to demo poll |
 | FR-007 | Voting | Cast Votes | Users can vote on poll questions | High | ✅ Implemented | One vote per user per question with real-time updates |
 | FR-008 | Voting | Vote Validation | Prevent duplicate voting and validate responses | High | ✅ Implemented | System tracks user votes and prevents duplicates |
 | FR-009 | Results | Real-time Results | Display live poll results and statistics | High | ✅ Implemented | Real-time vote counts and percentages |

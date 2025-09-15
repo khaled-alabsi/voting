@@ -31,6 +31,7 @@ export interface Vote {
   questionId: string;
   answerId: string;
   userId?: string; // Optional for anonymous votes
+  voterName?: string; // Optional voter name
   votedAt: Timestamp;
   timeToVote?: number; // Time in milliseconds from poll start to vote
 }
@@ -116,6 +117,7 @@ export interface VotingSession {
   currentQuestionIndex: number;
   answers: { [questionId: string]: string };
   timeSpent: { [questionId: string]: number };
+  voterName?: string; // Optional voter name
 }
 
 export interface NotificationState {
