@@ -21,6 +21,9 @@
 | FR-006.1 | Poll Management | Success Modal | Show success dialog after poll creation with sharing options | Medium | ✅ Implemented | Modal displays share URL, copy functionality, and navigation buttons |
 | FR-006.2 | Voting | Voter Name Field | Optional name field for voters with anonymous default | Medium | ✅ Implemented | Name entry modal before voting with anonymous option |
 | FR-006.3 | Demo | Demo Poll Functionality | Functional "View Demo Poll" button for testing | Medium | ✅ Implemented | Button creates and navigates to demo poll |
+| FR-007 | Poll Management | Result Visibility Control | Properly enforce "Show results to voters" setting | High | ✅ Implemented | Results only shown if setting is enabled |
+| FR-008 | Admin | Creator Admin Panel | Separate admin interface for poll creators | High | ✅ Implemented | Admin panel with voter stats and result controls |
+| FR-009 | Admin | Creator Authentication | Session management for creator privileges | High | ✅ Implemented | Local storage sessions with access verification |
 | FR-007 | Voting | Cast Votes | Users can vote on poll questions | High | ✅ Implemented | One vote per user per question with real-time updates |
 | FR-008 | Voting | Vote Validation | Prevent duplicate voting and validate responses | High | ✅ Implemented | System tracks user votes and prevents duplicates |
 | FR-009 | Results | Real-time Results | Display live poll results and statistics | High | ✅ Implemented | Real-time vote counts and percentages |

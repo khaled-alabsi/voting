@@ -484,6 +484,7 @@ export const CreatePollPage = ({ user }: CreatePollPageProps) => {
         pollTitle={formData.title}
         onGoToPoll={() => navigate(`/poll/${createdPollId}`)}
         onViewResults={() => navigate(`/poll/${createdPollId}/results`)}
+        onGoToAdmin={() => navigate(`/poll/${createdPollId}/admin`)}
       />
     </div>
   );

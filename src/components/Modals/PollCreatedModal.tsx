@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Copy, ExternalLink, BarChart3, Check } from 'lucide-react';
+import { X, Copy, ExternalLink, BarChart3, Check, Settings } from 'lucide-react';
 import { getShareUrl } from '../../config/site';
 
 interface PollCreatedModalProps {
@@ -9,6 +9,7 @@ interface PollCreatedModalProps {
   pollTitle: string;
   onGoToPoll: () => void;
   onViewResults: () => void;
+  onGoToAdmin?: () => void;
 }
 
 export const PollCreatedModal = ({ 
@@ -17,7 +18,8 @@ export const PollCreatedModal = ({
   pollId, 
   pollTitle, 
   onGoToPoll, 
-  onViewResults 
+  onViewResults,
+  onGoToAdmin
 }: PollCreatedModalProps) => {
   const [copied, setCopied] = useState(false);
   
@@ -111,6 +113,16 @@ export const PollCreatedModal = ({
               <BarChart3 className="w-4 h-4 mr-2" />
               View Results (Creator Only)
             </button>
+
+            {onGoToAdmin && (
+              <button
+                onClick={onGoToAdmin}
+                className="flex items-center justify-center px-4 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors"
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                Admin Panel (Creator Only)
+              </button>
+            )}
 
             <button
               onClick={onClose}

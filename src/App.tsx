@@ -6,6 +6,7 @@ import { Header } from './components/Layout/Header';
 import { HomePage } from './pages/HomePage';
 import { CreatePollPage } from './pages/CreatePollPage';
 import { PollPage } from './pages/PollPage';
+import { PollAdminPage } from './pages/PollAdminPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { FirebaseTestPage } from './pages/FirebaseTestPage';
 import { FirebaseConfigPage } from './pages/FirebaseConfigPage';
@@ -81,6 +82,7 @@ function App() {
                 element={user ? <CreatePollPage user={user} /> : <Navigate to="/" />} 
               />
               <Route path="/poll/:pollId" element={<PollPage user={user} />} />
+              <Route path="/poll/:pollId/admin" element={<PollAdminPage user={user} />} />
               <Route 
                 path="/dashboard" 
                 element={user && !user.isAnonymous ? <DashboardPage user={user} /> : <Navigate to="/" />} 

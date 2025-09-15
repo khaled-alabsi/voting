@@ -16,6 +16,7 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import { db } from '../lib/firebase';
 import { getPollUrl } from '../config/site';
+import { CreatorAuthService } from './creatorAuthService';
 import type { Poll, Vote, Question, Answer, PollFormData, PollStats, ExportData } from '../types';
 
 // Collections
@@ -65,6 +66,10 @@ export class PollService {
     };
 
     await setDoc(doc(db, POLLS_COLLECTION, pollId), poll);
+    
+    // Create creator session for admin access
+    CreatorAuthService.createCreatorSession(pollId, creatorId);
+    
     return pollId;
   }
 
@@ -132,6 +137,15 @@ export class PollService {
     });
 
     await batch.commit();
+  }
+
+  // Update poll settings
+  static async updatePollSettings(pollId: string, settings: Poll['settings']): Promise<void> {
+    const pollRef = doc(db, POLLS_COLLECTION, pollId);
+    await updateDoc(pollRef, {
+      settings: settings,
+      updatedAt: Timestamp.now()
+    });
   }
 
   // Get votes for a poll

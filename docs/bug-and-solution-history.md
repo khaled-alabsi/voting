@@ -1,5 +1,115 @@
 # Bug and Solution History
 
+## 2025-09-15 - Fixed Result Visibility & Added Creator Admin Panel
+
+### 🐛 Bug Description
+
+- **Issue 1**: "Show results to voters after they vote" setting was not working - voters could always see results after voting regardless of poll settings
+- **Issue 2**: Poll creators needed separate admin panel with privileges like controlling result visibility and tracking voter progress
+- **Status**: ✅ **FIXED** - Result visibility properly controlled, admin panel implemented
+
+### 🔍 Root Cause Analysis
+
+**Issue 1 - Result Visibility Bug:**
+- Code in `PollPage.tsx` used condition `{showResults || userHasVoted ? (` 
+- This meant results were ALWAYS shown if user had voted, ignoring `poll.settings.showResultsToVoters`
+- Results toggle button was always visible regardless of settings
+
+**Issue 2 - Missing Creator Privileges:**
+- No way for poll creator to have special privileges
+- Creator and voters used same interface and permissions
+- No session management for creator authentication
+- No separate admin interface for poll management
+
+### 🛠️ Solution Implemented
+
+#### 1. ✅ Fixed Result Visibility Control
+
+**Files Modified:**
+- `src/pages/PollPage.tsx` - Fixed visibility logic
+
+**Changes:**
+- Updated result display condition to: `{showResults || (userHasVoted && poll.settings.showResultsToVoters) ? (`
+- Added setting check to results toggle button: `poll.settings.showResultsToVoters &&`
+- Now voters only see results if poll creator allows it
+
+#### 2. ✅ Implemented Creator Admin Panel System
+
+**New Files Created:**
+- `src/services/creatorAuthService.ts` - Creator session management
+- `src/pages/PollAdminPage.tsx` - Admin interface for poll creators
+
+**Files Modified:**
+- `src/services/pollService.ts` - Added `updatePollSettings()` method and creator session creation
+- `src/components/Modals/PollCreatedModal.tsx` - Added "Admin Panel" button
+- `src/pages/CreatePollPage.tsx` - Added admin navigation
+- `src/App.tsx` - Added admin route `/poll/:pollId/admin`
+
+### 🚀 New Features
+
+#### Creator Admin Panel Features:
+- **📊 Voter Statistics**: Total voters, completed votes, in-progress votes
+- **👁️ Result Visibility Control**: Toggle "Show Results to Voters" setting in real-time
+- **🔗 Link Management**: Copy voting link and admin link separately  
+- **📈 Live Results**: Always-visible results for creator regardless of voter settings
+- **🔐 Access Control**: Admin panel only accessible to poll creator
+
+#### Creator Authentication:
+- **💾 Session Management**: Local storage sessions for creator access (24h duration)
+- **🔒 Access Verification**: Verifies creator via Firebase Auth + session storage
+- **🌐 Separate URLs**: 
+  - Voter URL: `/poll/{pollId}`
+  - Admin URL: `/poll/{pollId}/admin`
+
+#### Enhanced Poll Creation:
+- **🎯 Auto-Admin Access**: Creator sessions automatically created on poll creation
+- **🚀 Quick Access**: "Admin Panel" button in success modal
+- **📋 Better UX**: Clear separation between voter and admin interfaces
+
+### 📋 Technical Implementation
+
+**Creator Session Flow:**
+```typescript
+// On poll creation
+CreatorAuthService.createCreatorSession(pollId, creatorId);
+
+// Access verification  
+CreatorAuthService.isCreator(pollId, creatorId); // Returns boolean
+
+// Session cleanup
+CreatorAuthService.cleanExpiredSessions(); // Auto cleanup
+```
+
+**Result Visibility Logic:**
+```typescript
+// Before (broken)
+{showResults || userHasVoted ? (
+
+// After (fixed)  
+{showResults || (userHasVoted && poll.settings.showResultsToVoters) ? (
+```
+
+**Admin Panel Route:**
+```typescript
+<Route path="/poll/:pollId/admin" element={<PollAdminPage user={user} />} />
+```
+
+### 🎯 User Experience Improvements
+
+**For Voters:**
+- ✅ Results now properly hidden based on creator's choice
+- ✅ Clean voting interface without admin clutter
+- ✅ Results toggle only shows when allowed
+
+**For Creators:**
+- ✅ Dedicated admin panel with powerful controls
+- ✅ Real-time voter tracking and statistics
+- ✅ Instant result visibility toggle
+- ✅ Separate admin link for sharing with co-organizers
+- ✅ Always-accessible results regardless of voter settings
+
+---
+
 ## 2025-09-15 - Domain Change: pool.leute.space → poll.leute.space
 
 ### 🔄 Change Description

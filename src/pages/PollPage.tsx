@@ -269,7 +269,7 @@ export const PollPage = ({ user }: PollPageProps) => {
                     )}
                   </div>
                   
-                  {showResults || userHasVoted ? (
+                  {showResults || (userHasVoted && poll.settings.showResultsToVoters) ? (
                     // Show results
                     <div className="space-y-3">
                       {questionAnswers.map((answer) => {
@@ -325,7 +325,7 @@ export const PollPage = ({ user }: PollPageProps) => {
         )}
 
         {/* Results toggle */}
-        {votes.length > 0 && !isExpired && (
+        {votes.length > 0 && !isExpired && poll.settings.showResultsToVoters && (
           <div className="mt-6 text-center">
             <button
               onClick={() => setShowResults(!showResults)}
