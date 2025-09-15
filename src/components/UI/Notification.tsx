@@ -47,23 +47,23 @@ export const Notification = ({ notification, onClose }: NotificationProps) => {
   };
 
   return (
-    <div className="fixed top-4 right-4 z-50 transform transition-transform duration-300 ease-in-out">
-      <div className={`max-w-sm w-full ${getBackgroundColor()} rounded-xl shadow-lg p-4 border-l-4 border-white/30`}>
-        <div className="flex items-start">
-          <div className="flex-shrink-0">
+    <div className="fixed top-4 right-4 z-50">
+      <div className={`w-80 ${getBackgroundColor()} rounded-lg shadow-lg p-4`}>
+        <div className="flex items-center space-x-3">
+          <div>
             {getIcon()}
           </div>
-          <div className="ml-3 w-0 flex-1">
-            <p className="text-sm font-medium">
+          <div className="flex-1">
+            <p className="text-sm font-medium text-white">
               {notification.message}
             </p>
           </div>
-          <div className="ml-4 flex-shrink-0 flex">
+          <div>
             <button
-              className="text-white/80 hover:text-white transition-colors duration-200 rounded-full p-1 hover:bg-white/20"
+              type="button"
+              className="text-white opacity-70 hover:opacity-100 transition-opacity p-1 rounded hover:bg-white hover:bg-opacity-20"
               onClick={onClose}
             >
-              <span className="sr-only">Close</span>
               <X className="h-4 w-4" />
             </button>
           </div>
