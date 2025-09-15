@@ -427,6 +427,11 @@ export class SessionService {
               }
             }
 
+            // Check if current user is the creator of this poll
+            const currentUser = AuthService.getCurrentUser();
+            const isCreator = currentUser && pollData?.creatorId === currentUser.uid;
+            const role = isCreator ? 'creator' : session.role;
+
             // Convert lastActivity to Timestamp, handling both string and Date formats
             let lastAccessedTimestamp: Timestamp;
             try {
@@ -441,7 +446,7 @@ export class SessionService {
 
             return {
               pollId: session.pollId,
-              role: session.role,
+              role: role,
               lastAccessed: lastAccessedTimestamp,
               status,
               title: pollData?.title || 'Unknown Poll'
