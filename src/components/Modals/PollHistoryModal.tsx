@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { X, Clock, User, Crown, Eye, ExternalLink, Settings, Trash2 } from 'lucide-react';
+import { X, Clock, User, Crown, Eye, ExternalLink, Settings, Trash2, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { SessionService } from '../../services/sessionService';
 import { PollService } from '../../services/pollService';
@@ -19,6 +19,7 @@ export const PollHistoryModal = ({ isOpen, onClose }: PollHistoryModalProps) => 
   const [activeTab, setActiveTab] = useState<'participated' | 'created'>('participated');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [pollToDelete, setPollToDelete] = useState<{pollId: string, title: string} | null>(null);
+  const [showClearHistoryConfirm, setShowClearHistoryConfirm] = useState(false);
   const navigate = useNavigate();
   const currentUser = AuthService.getCurrentUser();
 
@@ -82,6 +83,36 @@ export const PollHistoryModal = ({ isOpen, onClose }: PollHistoryModalProps) => 
     }
   };
 
+  const handleClearHistory = () => {
+    setShowClearHistoryConfirm(true);
+  };
+
+  const confirmClearHistory = async () => {
+    try {
+      setLoading(true);
+      
+      // Delete all created polls
+      if (createdPolls.length > 0) {
+        await Promise.all(createdPolls.map(poll => PollService.deletePoll(poll.pollId)));
+      }
+      
+      // Clear all poll-related cookies (this will clear participated polls history)
+      const { CookieService } = await import('../../services/cookieService');
+      CookieService.clearAllPollCookies();
+      
+      // Refresh the poll history
+      await loadPollHistory();
+      
+      alert('History cleared successfully!');
+    } catch (error) {
+      console.error('Failed to clear history:', error);
+      alert('Failed to clear history. Please try again.');
+    } finally {
+      setShowClearHistoryConfirm(false);
+      setLoading(false);
+    }
+  };
+
   const getRoleIcon = (role: string) => {
     switch (role) {
       case 'creator':
@@ -139,12 +170,24 @@ export const PollHistoryModal = ({ isOpen, onClose }: PollHistoryModalProps) => 
               <h2 className="text-2xl font-bold text-gray-900">Your Poll History</h2>
               <p className="text-gray-600 mt-1">View and manage polls you've participated in or created</p>
             </div>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <X className="w-6 h-6" />
-            </button>
+            <div className="flex items-center space-x-2">
+              {((activeTab === 'participated' && pollHistory && pollHistory.polls.length > 0) || 
+                (activeTab === 'created' && createdPolls.length > 0)) && (
+                <button
+                  onClick={handleClearHistory}
+                  className="inline-flex items-center px-3 py-2 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4 mr-1" />
+                  Clear History
+                </button>
+              )}
+              <button
+                onClick={onClose}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
           </div>
 
           {/* Tab Navigation */}
@@ -379,6 +422,46 @@ export const PollHistoryModal = ({ isOpen, onClose }: PollHistoryModalProps) => 
                 className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
               >
                 Delete Poll
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Clear History Confirmation Modal */}
+      {showClearHistoryConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center mb-4">
+              <AlertTriangle className="w-6 h-6 text-red-600 mr-3" />
+              <h3 className="text-lg font-semibold text-gray-900">Clear Poll History</h3>
+            </div>
+            <p className="text-gray-600 mb-4">
+              Are you sure you want to clear your entire poll history?
+            </p>
+            <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 mb-4">
+              <p className="text-sm text-yellow-800">
+                <strong>Warning:</strong> This action will:
+              </p>
+              <ul className="text-sm text-yellow-800 mt-2 space-y-1">
+                <li>• Permanently delete all polls you created</li>
+                <li>• Remove all associated votes and data</li>
+                <li>• Clear history of polls you've participated in</li>
+                <li>• This action cannot be undone</li>
+              </ul>
+            </div>
+            <div className="flex space-x-3">
+              <button
+                onClick={() => setShowClearHistoryConfirm(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmClearHistory}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+              >
+                Clear History
               </button>
             </div>
           </div>

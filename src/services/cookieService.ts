@@ -40,8 +40,25 @@ export class CookieService {
       const enabled = this.getCookie(testCookie) === 'test';
       this.deleteCookie(testCookie);
       return enabled;
-    } catch (error) {
+    } catch {
       return false;
+    }
+  }
+
+  /**
+   * Delete all poll-related cookies (session cookies)
+   */
+  static clearAllPollCookies(): void {
+    const allCookies = document.cookie.split(';');
+    for (let i = 0; i < allCookies.length; i++) {
+      let cookie = allCookies[i];
+      while (cookie.charAt(0) === ' ') cookie = cookie.substring(1, cookie.length);
+      const name = cookie.split('=')[0];
+      
+      // Clear session cookies and poll-related cookies
+      if (name.startsWith('session_') || name === 'voting_session_token') {
+        this.deleteCookie(name);
+      }
     }
   }
 }
