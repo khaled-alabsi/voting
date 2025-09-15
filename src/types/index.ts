@@ -126,3 +126,50 @@ export interface NotificationState {
   isVisible: boolean;
   duration?: number;
 }
+
+// Enhanced session management types
+export interface UserSession {
+  id: string;
+  userId?: string; // Firebase user ID (optional for anonymous)
+  sessionToken: string; // Stored in cookie
+  createdAt: Timestamp;
+  lastActivity: Timestamp;
+  isActive: boolean;
+  userAgent?: string;
+  ipAddress?: string;
+}
+
+export interface PollSession {
+  id: string;
+  sessionId: string;
+  pollId: string;
+  role: 'creator' | 'voter' | 'viewer';
+  joinedAt: Timestamp;
+  lastActivity: Timestamp;
+  hasVoted: boolean;
+  isActive: boolean;
+  voterName?: string;
+}
+
+export interface PollHistory {
+  userId?: string;
+  sessionToken: string;
+  polls: {
+    pollId: string;
+    role: 'creator' | 'voter' | 'viewer';
+    lastAccessed: Timestamp;
+    status: 'active' | 'completed' | 'expired';
+    title: string;
+  }[];
+}
+
+// Enhanced visitor tracking
+export interface PollVisitor {
+  sessionId: string;
+  pollId: string;
+  joinedAt: Timestamp;
+  lastSeen: Timestamp;
+  hasVoted: boolean;
+  voterName?: string;
+  userAgent?: string;
+}

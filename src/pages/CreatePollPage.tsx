@@ -482,7 +482,6 @@ export const CreatePollPage = ({ user }: CreatePollPageProps) => {
         onClose={() => setShowSuccessModal(false)}
         pollId={createdPollId}
         pollTitle={formData.title}
-        onGoToPoll={() => navigate(`/poll/${createdPollId}`)}
         onViewResults={() => navigate(`/poll/${createdPollId}/results`)}
         onGoToAdmin={() => navigate(`/poll/${createdPollId}/admin`)}
       />

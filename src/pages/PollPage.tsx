@@ -5,6 +5,7 @@ import type { User as FirebaseUser } from 'firebase/auth';
 import type { Poll, Vote, VotingSession } from '../types';
 import { PollService } from '../services/pollService';
 import { AuthService } from '../services/authService';
+import { SessionService } from '../services/sessionService';
 import { CountdownTimer } from '../components/UI/CountdownTimer';
 
 interface PollPageProps {
@@ -44,6 +45,17 @@ export const PollPage = ({ user }: PollPageProps) => {
       setLoading(false);
       return;
     }
+
+    // Initialize session and track visitor
+    const initSession = async () => {
+      try {
+        await SessionService.joinPoll(pollId, 'viewer');
+      } catch (error) {
+        console.error('Failed to initialize session:', error);
+      }
+    };
+    
+    initSession();
 
     const unsubscribePoll = PollService.subscribeToPoll(pollId, (pollData) => {
       setPoll(pollData);
@@ -103,6 +115,10 @@ export const PollPage = ({ user }: PollPageProps) => {
       timeSpent: {},
       voterName: voterName
     });
+    
+    // Update session with voter role and name
+    await SessionService.joinPoll(poll.id, 'voter', voterName);
+    
     setShowNameEntry(false);
   };
 
@@ -125,6 +141,9 @@ export const PollPage = ({ user }: PollPageProps) => {
     setSubmitting(true);
     try {
       await PollService.submitVote(poll.id, questionId, answerId, user.uid, votingSession?.voterName);
+      
+      // Mark as voted in session
+      await SessionService.markAsVoted(poll.id);
       
       // Remove this question from voting session
       if (votingSession) {

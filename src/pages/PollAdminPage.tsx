@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Users, Clock, BarChart3, Settings, ExternalLink } from 'lucide-react';
+import { Eye, EyeOff, Users, Clock, BarChart3, Settings, ExternalLink, UserX } from 'lucide-react';
 import type { User as FirebaseUser } from 'firebase/auth';
-import type { Poll, Vote } from '../types';
+import type { Poll, Vote, PollVisitor } from '../types';
 import { PollService } from '../services/pollService';
 import { CreatorAuthService } from '../services/creatorAuthService';
+import { SessionService } from '../services/sessionService';
 
 interface PollAdminPageProps {
   user: FirebaseUser | null;
@@ -15,6 +16,7 @@ export const PollAdminPage = ({ user }: PollAdminPageProps) => {
   const navigate = useNavigate();
   const [poll, setPoll] = useState<Poll | null>(null);
   const [votes, setVotes] = useState<Vote[]>([]);
+  const [visitors, setVisitors] = useState<PollVisitor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,9 +64,15 @@ export const PollAdminPage = ({ user }: PollAdminPageProps) => {
       setVotes(votesData);
     });
 
+    // Subscribe to visitors
+    const unsubscribeVisitors = SessionService.subscribeToPollVisitors(pollId, (visitorsData: PollVisitor[]) => {
+      setVisitors(visitorsData);
+    });
+
     return () => {
       unsubscribePoll();
       unsubscribeVotes();
+      unsubscribeVisitors();
     };
   }, [pollId, user]);
 
@@ -84,7 +92,7 @@ export const PollAdminPage = ({ user }: PollAdminPageProps) => {
   };
 
   const getVoterStats = () => {
-    if (!poll || !votes.length) return { total: 0, completed: 0, inProgress: 0 };
+    if (!poll || !votes.length) return { total: 0, completed: 0, inProgress: 0, visitors: visitors.length, nonVoters: 0 };
 
     const uniqueVoters = new Set(votes.map(v => v.userId || v.voterName || 'anonymous'));
     const votersWithAllAnswers = new Set();
@@ -98,10 +106,15 @@ export const PollAdminPage = ({ user }: PollAdminPageProps) => {
       }
     });
 
+    // Count visitors who haven't voted
+    const nonVoters = visitors.filter(visitor => !visitor.hasVoted).length;
+
     return {
       total: uniqueVoters.size,
       completed: votersWithAllAnswers.size,
-      inProgress: uniqueVoters.size - votersWithAllAnswers.size
+      inProgress: uniqueVoters.size - votersWithAllAnswers.size,
+      visitors: visitors.length,
+      nonVoters
     };
   };
 
@@ -206,7 +219,7 @@ export const PollAdminPage = ({ user }: PollAdminPageProps) => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid md:grid-cols-4 gap-4">
+      <div className="grid md:grid-cols-5 gap-4">
         <div className="bg-white p-6 rounded-lg shadow-sm border">
           <div className="flex items-center">
             <Users className="w-8 h-8 text-blue-600 mr-3" />
@@ -239,6 +252,16 @@ export const PollAdminPage = ({ user }: PollAdminPageProps) => {
 
         <div className="bg-white p-6 rounded-lg shadow-sm border">
           <div className="flex items-center">
+            <UserX className="w-8 h-8 text-orange-600 mr-3" />
+            <div>
+              <p className="text-sm text-gray-600">Visitors</p>
+              <p className="text-2xl font-bold text-orange-700">{voterStats.visitors}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-lg shadow-sm border">
+          <div className="flex items-center">
             <Eye className="w-8 h-8 text-purple-600 mr-3" />
             <div>
               <p className="text-sm text-gray-600">Results Visible</p>
@@ -253,37 +276,137 @@ export const PollAdminPage = ({ user }: PollAdminPageProps) => {
       {/* Controls */}
       <div className="bg-white rounded-lg shadow-sm border p-6">
         <h3 className="text-lg font-semibold mb-4">Poll Controls</h3>
-        <div className="flex space-x-4">
-          <button
-            onClick={toggleResultsVisibility}
-            className={`flex items-center px-4 py-2 rounded-md ${
-              poll.settings.showResultsToVoters
-                ? 'bg-red-600 text-white hover:bg-red-700'
-                : 'bg-green-600 text-white hover:bg-green-700'
-            }`}
-          >
-            {poll.settings.showResultsToVoters ? (
-              <>
-                <EyeOff className="w-4 h-4 mr-2" />
-                Hide Results from Voters
-              </>
-            ) : (
-              <>
-                <Eye className="w-4 h-4 mr-2" />
-                Show Results to Voters
-              </>
-            )}
-          </button>
-          
-          <button
-            onClick={() => navigate(`/poll/${poll.id}`)}
-            className="flex items-center px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
-          >
-            <ExternalLink className="w-4 h-4 mr-2" />
-            View as Voter
-          </button>
+        <div className="grid md:grid-cols-2 gap-6">
+          {/* Visibility Controls */}
+          <div>
+            <h4 className="text-md font-medium text-gray-900 mb-3">Result Visibility</h4>
+            <button
+              onClick={toggleResultsVisibility}
+              className={`flex items-center px-4 py-2 rounded-md w-full justify-center ${
+                poll.settings.showResultsToVoters
+                  ? 'bg-red-600 text-white hover:bg-red-700'
+                  : 'bg-green-600 text-white hover:bg-green-700'
+              }`}
+            >
+              {poll.settings.showResultsToVoters ? (
+                <>
+                  <EyeOff className="w-4 h-4 mr-2" />
+                  Hide Results from Voters
+                </>
+              ) : (
+                <>
+                  <Eye className="w-4 h-4 mr-2" />
+                  Show Results to Voters
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Time Controls */}
+          <div>
+            <h4 className="text-md font-medium text-gray-900 mb-3">Time Management</h4>
+            <div className="space-y-2">
+              {poll.settings.expiresAt ? (
+                <div className="text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600">Expires:</span>
+                    <span className={`font-medium ${isExpired ? 'text-red-600' : 'text-gray-900'}`}>
+                      {safeToDate(poll.settings.expiresAt).toLocaleDateString()} at{' '}
+                      {safeToDate(poll.settings.expiresAt).toLocaleTimeString()}
+                    </span>
+                  </div>
+                  {!isExpired && (
+                    <div className="mt-1 text-xs text-gray-500">
+                      {Math.ceil((safeToDate(poll.settings.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24))} days remaining
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-sm text-gray-600">No expiration date set</div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 pt-4 border-t border-gray-200">
+          <h4 className="text-md font-medium text-gray-900 mb-3">Navigation</h4>
+          <div className="flex space-x-3">
+            <button
+              onClick={() => window.open(`/poll/${poll.id}`, '_blank')}
+              className="flex items-center px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+            >
+              <ExternalLink className="w-4 h-4 mr-2" />
+              View as Voter
+            </button>
+            <button
+              onClick={() => navigate(`/poll/${poll.id}/results`)}
+              className="flex items-center px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+            >
+              <BarChart3 className="w-4 h-4 mr-2" />
+              View Results
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Active Visitors */}
+      {visitors.length > 0 && (
+        <div className="bg-white rounded-lg shadow-sm border p-6">
+          <h3 className="text-lg font-semibold mb-4 flex items-center">
+            <UserX className="w-5 h-5 mr-2 text-orange-600" />
+            Active Visitors ({visitors.length})
+          </h3>
+          <div className="space-y-2">
+            {visitors.slice().sort((a, b) => {
+              // Sort by: non-voters first, then by join time (newest first)
+              if (a.hasVoted !== b.hasVoted) {
+                return a.hasVoted ? 1 : -1;
+              }
+              return b.joinedAt.seconds - a.joinedAt.seconds;
+            }).map((visitor) => (
+              <div 
+                key={visitor.sessionId} 
+                className={`flex items-center justify-between p-3 rounded-lg ${
+                  visitor.hasVoted ? 'bg-green-50 border-green-200' : 'bg-orange-50 border-orange-200'
+                } border`}
+              >
+                <div className="flex items-center space-x-3">
+                  <div className={`w-3 h-3 rounded-full ${
+                    visitor.hasVoted ? 'bg-green-500' : 'bg-orange-500'
+                  }`} />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">
+                      {visitor.voterName || 'Anonymous Visitor'}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Joined {safeToDate(visitor.joinedAt).toLocaleTimeString()}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className={`px-2 py-1 text-xs rounded-full ${
+                    visitor.hasVoted 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-orange-100 text-orange-800'
+                  }`}>
+                    {visitor.hasVoted ? 'Voted' : 'Viewing'}
+                  </span>
+                  <span className="text-xs text-gray-400">
+                    Last seen {safeToDate(visitor.lastSeen).toLocaleTimeString()}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+          {visitors.filter(v => !v.hasVoted).length > 0 && (
+            <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+              <p className="text-sm text-orange-800">
+                <strong>{visitors.filter(v => !v.hasVoted).length}</strong> visitor(s) haven't voted yet
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Results */}
       <div className="bg-white rounded-lg shadow-sm border p-6">

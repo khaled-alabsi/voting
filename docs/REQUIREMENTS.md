@@ -24,6 +24,10 @@
 | FR-007 | Poll Management | Result Visibility Control | Properly enforce "Show results to voters" setting | High | ✅ Implemented | Results only shown if setting is enabled |
 | FR-008 | Admin | Creator Admin Panel | Separate admin interface for poll creators | High | ✅ Implemented | Admin panel with voter stats and result controls |
 | FR-009 | Admin | Creator Authentication | Session management for creator privileges | High | ✅ Implemented | Local storage sessions with access verification |
+| FR-010 | Session Management | Cookie-based Sessions | Long-term session management with cookies | High | ✅ Implemented | 30-day cookie sessions with database storage |
+| FR-011 | Session Management | Visitor Tracking | Track poll visitors for admin analytics | High | ✅ Implemented | Real-time visitor tracking with voting status |
+| FR-012 | Navigation | Enhanced Creator Flow | Improved navigation for poll creators | High | ✅ Implemented | Vote link opens in new tab, persistent creator access |
+| FR-013 | Admin | Time Management Controls | Admin controls for poll timing and expiration | Medium | ✅ Implemented | Expiration display and countdown in admin panel |
 | FR-007 | Voting | Cast Votes | Users can vote on poll questions | High | ✅ Implemented | One vote per user per question with real-time updates |
 | FR-008 | Voting | Vote Validation | Prevent duplicate voting and validate responses | High | ✅ Implemented | System tracks user votes and prevents duplicates |
 | FR-009 | Results | Real-time Results | Display live poll results and statistics | High | ✅ Implemented | Real-time vote counts and percentages |

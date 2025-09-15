@@ -7,7 +7,6 @@ interface PollCreatedModalProps {
   onClose: () => void;
   pollId: string;
   pollTitle: string;
-  onGoToPoll: () => void;
   onViewResults: () => void;
   onGoToAdmin?: () => void;
 }
@@ -17,7 +16,6 @@ export const PollCreatedModal = ({
   onClose, 
   pollId, 
   pollTitle, 
-  onGoToPoll, 
   onViewResults,
   onGoToAdmin
 }: PollCreatedModalProps) => {
@@ -26,6 +24,11 @@ export const PollCreatedModal = ({
   if (!isOpen) return null;
 
   const shareUrl = getShareUrl(pollId);
+
+  const openVotingInNewTab = () => {
+    const votingUrl = `${window.location.origin}/poll/${pollId}`;
+    window.open(votingUrl, '_blank');
+  };
 
   const copyToClipboard = async () => {
     try {
@@ -99,7 +102,7 @@ export const PollCreatedModal = ({
 
           <div className="flex flex-col space-y-3">
             <button
-              onClick={onGoToPoll}
+              onClick={openVotingInNewTab}
               className="flex items-center justify-center px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200"
             >
               <ExternalLink className="w-4 h-4 mr-2" />
