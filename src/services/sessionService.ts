@@ -10,13 +10,15 @@ import {
   updateDoc,
   onSnapshot,
   Timestamp,
-  writeBatch
+  writeBatch,
+  addDoc
 } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
+import { getAuth } from 'firebase/auth';
 import { db } from '../lib/firebase';
 import { CookieService } from './cookieService';
 import { AuthService } from './authService';
-import type { UserSession, PollSession, PollHistory, PollVisitor } from '../types';
+import type { UserSession, PollSession, PollHistory, PollVisitor, VotingSession } from '../types';
 
 // Collections
 const USER_SESSIONS_COLLECTION = 'userSessions';
@@ -90,43 +92,77 @@ export class SessionService {
   /**
    * Join a poll session
    */
-  static async joinPoll(pollId: string, role: 'creator' | 'voter' | 'viewer', voterName?: string): Promise<void> {
-    const sessionToken = await this.initializeSession();
-    const pollSessionId = `${sessionToken}_${pollId}`;
-
+  static async joinPoll(pollId: string, role: 'creator' | 'voter' | 'viewer', name?: string): Promise<VotingSession> {
+    console.log('SessionService.joinPoll called with:', { pollId, role, name });
+    
     try {
-      // Check if session already exists
-      const existingSession = await getDoc(doc(db, POLL_SESSIONS_COLLECTION, pollSessionId));
+      console.log('Attempting to join poll session...');
       
-      if (existingSession.exists()) {
-        // Update existing session
-        await updateDoc(doc(db, POLL_SESSIONS_COLLECTION, pollSessionId), {
-          lastActivity: Timestamp.now(),
-          isActive: true,
-          voterName: voterName || existingSession.data().voterName
-        });
-      } else {
-        // Create new poll session
-        const pollSession: PollSession = {
-          id: pollSessionId,
-          sessionId: sessionToken,
-          pollId,
-          role,
-          joinedAt: Timestamp.now(),
-          lastActivity: Timestamp.now(),
-          hasVoted: false,
-          isActive: true,
-          voterName
-        };
-
-        await setDoc(doc(db, POLL_SESSIONS_COLLECTION, pollSessionId), pollSession);
-      }
-
-      // Track as visitor
-      await this.trackVisitor(pollId, sessionToken, voterName);
+      // Check if Firebase is configured
+      const auth = getAuth();
+      console.log('Firebase auth instance:', !!auth);
+      console.log('Current user:', auth.currentUser?.uid);
       
+      const sessionId = uuidv4();
+      console.log('Generated session ID:', sessionId);
+      
+      const sessionData = {
+        id: sessionId,
+        pollId,
+        role,
+        userName: name || 'Anonymous',
+        joinedAt: new Date(),
+        lastActivity: new Date(),
+        status: 'active' as const
+      };
+      console.log('Session data to save:', sessionData);
+
+      // Try to save to Firestore
+      console.log('Attempting to save session to Firestore...');
+      await addDoc(collection(db, 'sessions'), sessionData);
+      console.log('Successfully saved session to Firestore');
+
+      // Save to cookies for tracking
+      console.log('Saving session to cookies...');
+      CookieService.setCookie(`session_${pollId}`, sessionId, 30);
+      CookieService.setCookie(`session_${pollId}_data`, JSON.stringify(sessionData), 30);
+      console.log('Successfully saved session to cookies');
+
+      const votingSession: VotingSession = {
+        pollId,
+        startedAt: new Date(),
+        currentQuestionIndex: 0,
+        answers: {},
+        timeSpent: {},
+        voterName: name
+      };
+      console.log('Created voting session object:', votingSession);
+
+      // Track visitor analytics
+      console.log('Tracking visitor...');
+      await this.trackVisitor(pollId, role);
+      console.log('Successfully tracked visitor');
+
+      return votingSession;
     } catch (error) {
-      console.error('Failed to join poll session:', error);
+      console.error('SessionService.joinPoll error details:', {
+        error,
+        errorCode: error instanceof Error && 'code' in error ? error.code : 'unknown',
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        errorStack: error instanceof Error ? error.stack : 'No stack trace'
+      });
+      
+      // Provide more specific error messages
+      const firebaseError = error as { code?: string };
+      if (firebaseError?.code === 'permission-denied') {
+        throw new Error('Permission denied: Please check Firestore security rules');
+      } else if (firebaseError?.code === 'unavailable') {
+        throw new Error('Firebase service unavailable: Please check your internet connection');
+      } else if (firebaseError?.code === 'not-found') {
+        throw new Error('Firebase project not found: Please verify your configuration');
+      } else {
+        throw new Error(`Failed to join poll: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
     }
   }
 
@@ -134,19 +170,25 @@ export class SessionService {
    * Track poll visitor
    */
   static async trackVisitor(pollId: string, sessionToken: string, voterName?: string): Promise<void> {
+    console.log('SessionService.trackVisitor called with:', { pollId, sessionToken, voterName });
     const visitorId = `${sessionToken}_${pollId}`;
+    console.log('Visitor ID:', visitorId);
     
     try {
       const existingVisitor = await getDoc(doc(db, POLL_VISITORS_COLLECTION, visitorId));
+      console.log('Existing visitor check:', existingVisitor.exists());
       
       if (existingVisitor.exists()) {
         // Update last seen
+        console.log('Updating existing visitor...');
         await updateDoc(doc(db, POLL_VISITORS_COLLECTION, visitorId), {
           lastSeen: Timestamp.now(),
           voterName: voterName || existingVisitor.data().voterName
         });
+        console.log('Existing visitor updated successfully');
       } else {
         // Create new visitor record
+        console.log('Creating new visitor record...');
         const visitor: PollVisitor = {
           sessionId: sessionToken,
           pollId,
@@ -158,9 +200,11 @@ export class SessionService {
         };
 
         await setDoc(doc(db, POLL_VISITORS_COLLECTION, visitorId), visitor);
+        console.log('New visitor record created successfully');
       }
     } catch (error) {
       console.error('Failed to track visitor:', error);
+      throw error; // Re-throw the error
     }
   }
 

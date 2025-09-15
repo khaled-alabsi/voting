@@ -30,6 +30,9 @@ if (isUsingDemoConfig) {
   console.warn('🚨 Using demo Firebase configuration! App functionality will be limited.');
   console.warn('Environment:', import.meta.env.MODE);
   console.warn('Available env vars:', Object.keys(import.meta.env).filter(key => key.startsWith('VITE_')));
+} else {
+  console.log('✅ Firebase properly configured with project:', firebaseConfig.projectId);
+  console.log('🔥 Firebase configuration loaded successfully');
 }
 
 // Initialize Firebase

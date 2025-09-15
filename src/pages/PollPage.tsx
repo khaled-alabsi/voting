@@ -7,6 +7,7 @@ import { PollService } from '../services/pollService';
 import { AuthService } from '../services/authService';
 import { SessionService } from '../services/sessionService';
 import { CountdownTimer } from '../components/UI/CountdownTimer';
+import { isFirebaseConfigured } from '../lib/firebase';
 
 interface PollPageProps {
   user: FirebaseUser | null;
@@ -89,6 +90,13 @@ export const PollPage = ({ user }: PollPageProps) => {
   };
 
   const beginVotingWithName = async () => {
+    // Check Firebase configuration first
+    if (!isFirebaseConfigured) {
+      console.error('Firebase is not properly configured');
+      alert('Firebase is not configured. Please set up your Firebase environment variables in the .env file.');
+      return;
+    }
+    
     if (!poll || startingVoting) {
       return;
     }
@@ -96,8 +104,11 @@ export const PollPage = ({ user }: PollPageProps) => {
     setStartingVoting(true);
 
     try {
+      console.log('Starting voting process...', { poll: poll.id, user, voterName });
+
       // Check if authentication is required
       if (poll.settings.requireAuthentication && (!user || user.isAnonymous)) {
+        console.log('Authentication required but user not authenticated');
         alert('This poll requires authentication. Please sign in to vote.');
         setShowNameEntry(false);
         return;
@@ -105,8 +116,10 @@ export const PollPage = ({ user }: PollPageProps) => {
 
       // Sign in anonymously if needed and allowed
       if (!user && poll.settings.allowAnonymousVoting) {
+        console.log('Signing in anonymously...');
         try {
           await AuthService.signInAnonymously();
+          console.log('Anonymous sign-in successful');
         } catch (error) {
           console.error('Failed to sign in anonymously:', error);
           alert('Failed to start voting session');
@@ -115,6 +128,7 @@ export const PollPage = ({ user }: PollPageProps) => {
         }
       }
 
+      console.log('Creating voting session...');
       setVotingSession({
         pollId: poll.id,
         startedAt: new Date(),
@@ -124,14 +138,17 @@ export const PollPage = ({ user }: PollPageProps) => {
         voterName: voterName
       });
       
+      console.log('Joining poll session...');
       // Update session with voter role and name - this is crucial for poll history
       await SessionService.joinPoll(poll.id, 'voter', voterName);
+      console.log('Successfully joined poll session');
       
       // Close the modal after successful setup
       setShowNameEntry(false);
     } catch (error) {
       console.error('Error starting voting session:', error);
-      alert('Failed to start voting session. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      alert(`Failed to start voting session: ${errorMessage}. Please try again.`);
       setShowNameEntry(false);
     } finally {
       setStartingVoting(false);
