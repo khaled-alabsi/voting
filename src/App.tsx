@@ -75,7 +75,7 @@ function App() {
           
           <main className="container mx-auto px-4 py-8">
             <Routes>
-              <Route path="/" element={<HomePage user={user} onSignInRequired={() => setShowAuthModal(true)} />} />
+              <Route path="/" element={<HomePage user={user} onSignInRequired={() => setShowAuthModal(true)} onSignInAnonymously={handleSignInAnonymously} />} />
               <Route 
                 path="/create" 
                 element={user ? <CreatePollPage user={user} /> : <Navigate to="/" />} 

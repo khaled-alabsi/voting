@@ -47,8 +47,8 @@ export const Notification = ({ notification, onClose }: NotificationProps) => {
   };
 
   return (
-    <div className="fixed top-4 right-4 z-50 animate-in slide-in-from-top-2">
-      <div className={`max-w-sm w-full ${getBackgroundColor()} rounded-xl shadow-lg p-4 backdrop-blur-sm`}>
+    <div className="fixed top-4 right-4 z-50 transform transition-transform duration-300 ease-in-out">
+      <div className={`max-w-sm w-full ${getBackgroundColor()} rounded-xl shadow-lg p-4 border-l-4 border-white/30`}>
         <div className="flex items-start">
           <div className="flex-shrink-0">
             {getIcon()}
@@ -60,11 +60,11 @@ export const Notification = ({ notification, onClose }: NotificationProps) => {
           </div>
           <div className="ml-4 flex-shrink-0 flex">
             <button
-              className="text-white/80 hover:text-white transition-colors duration-200"
+              className="text-white/80 hover:text-white transition-colors duration-200 rounded-full p-1 hover:bg-white/20"
               onClick={onClose}
             >
               <span className="sr-only">Close</span>
-              <X className="h-5 w-5" />
+              <X className="h-4 w-4" />
             </button>
           </div>
         </div>

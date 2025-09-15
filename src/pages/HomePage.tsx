@@ -5,13 +5,25 @@ import type { User as FirebaseUser } from 'firebase/auth';
 interface HomePageProps {
   user?: FirebaseUser | null;
   onSignInRequired?: () => void;
+  onSignInAnonymously?: () => void;
 }
 
-export const HomePage = ({ user, onSignInRequired }: HomePageProps) => {
-  const handleCreatePollClick = (e: React.MouseEvent) => {
+export const HomePage = ({ user, onSignInRequired, onSignInAnonymously }: HomePageProps) => {
+  const handleCreatePollClick = async (e: React.MouseEvent) => {
     if (!user) {
       e.preventDefault();
-      onSignInRequired?.();
+      if (onSignInAnonymously) {
+        // Sign in anonymously first, then the user will be redirected via the route protection
+        try {
+          await onSignInAnonymously();
+        } catch (error) {
+          console.error('Failed to sign in anonymously:', error);
+          // Fallback to showing sign in modal
+          onSignInRequired?.();
+        }
+      } else {
+        onSignInRequired?.();
+      }
     }
   };
 
