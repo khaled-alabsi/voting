@@ -114,13 +114,17 @@ export class PollService {
     voterName?: string
   ): Promise<void> {
     const voteId = uuidv4();
+    
+    // Ensure voterName is not undefined for Firestore - use a default value
+    const resolvedVoterName = voterName || 'Anonymous';
+    
     const vote: Vote = {
       id: voteId,
       pollId,
       questionId,
       answerId,
       userId,
-      voterName,
+      voterName: resolvedVoterName,
       votedAt: Timestamp.now()
     };
 
