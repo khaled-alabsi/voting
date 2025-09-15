@@ -24,7 +24,7 @@ const developmentConfig: SiteConfig = {
 
 // Production configuration - Update this when using custom domain
 const productionConfig: SiteConfig = {
-  domain: 'https://pool.leute.space', // Update this to your custom domain
+  domain: 'https://poll.leute.space', // Update this to your custom domain
   name: 'Voting App',
   description: 'Create and manage polls with real-time voting',
   social: {

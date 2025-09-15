@@ -10,7 +10,7 @@ When switching from GitHub Pages default domain (`username.github.io/repository`
 
 | Configuration | GitHub Pages Default | Custom Domain |
 |---|---|---|
-| **Domain** | `khaled-alabsi.github.io/voting` | `pool.leute.space` |
+| **Domain** | `khaled-alabsi.github.io/voting` | `poll.leute.space` |
 | **Vite Base** | `/voting/` | `/` |
 | **404.html pathSegmentsToKeep** | `1` | `0` |
 | **Router Basename** | `/voting/` | `/` |

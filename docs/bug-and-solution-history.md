@@ -1,5 +1,44 @@
 # Bug and Solution History
 
+## 2025-09-15 - Domain Change: pool.leute.space → poll.leute.space
+
+### 🔄 Change Description
+
+- **Change**: Updated custom domain from `pool.leute.space` to `poll.leute.space`
+- **Status**: ✅ **COMPLETED** - All configurations updated
+- **Impact**: Share URLs, site configuration, and documentation updated
+
+### 🛠️ Files Modified
+
+#### 1. ✅ Site Configuration Update
+**File**: `src/config/site.ts`
+- Updated production domain configuration
+- All share URLs will now use the new domain
+
+#### 2. ✅ Documentation Updates  
+**File**: `docs/custom-domain-setup.md`
+- Updated domain reference in quick reference table
+
+#### 3. ✅ CNAME File Created
+**File**: `CNAME` (repository root)
+- Created CNAME file for GitHub Pages custom domain
+
+### 📋 Additional Steps Required
+
+**⚠️ Manual Actions Needed:**
+1. **GitHub Pages Settings**: Update custom domain in repository settings
+2. **DNS Configuration**: Update CNAME record from `pool` to `poll` in your DNS provider
+3. **SSL Certificate**: GitHub will automatically provision new SSL certificate
+
+**DNS Update Required:**
+```
+Type: CNAME
+Name: poll
+Value: khaled-alabsi.github.io
+```
+
+---
+
 ## 2025-09-14 - UI/UX Improvements: Success Modal, Voter Names, and Demo Poll
 
 ### 🚀 Enhancement Description
