@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Users, Clock, BarChart3, Settings, ExternalLink, UserX } from 'lucide-react';
+import { Eye, EyeOff, Users, Clock, BarChart3, Settings, ExternalLink, UserX, Trash2 } from 'lucide-react';
 import type { User as FirebaseUser } from 'firebase/auth';
 import type { Poll, Vote, PollVisitor } from '../types';
 import { PollService } from '../services/pollService';
@@ -19,6 +19,7 @@ export const PollAdminPage = ({ user }: PollAdminPageProps) => {
   const [visitors, setVisitors] = useState<PollVisitor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Helper function to safely convert Firestore timestamp to Date
   const safeToDate = (timestamp: unknown): Date => {
@@ -134,6 +135,20 @@ export const PollAdminPage = ({ user }: PollAdminPageProps) => {
     }
   };
 
+  const handleDeletePoll = async () => {
+    if (!poll) return;
+
+    try {
+      await PollService.deletePoll(poll.id);
+      navigate('/'); // Redirect to home after deletion
+    } catch (error) {
+      console.error('Failed to delete poll:', error);
+      alert('Failed to delete poll. Please try again.');
+    } finally {
+      setShowDeleteConfirm(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-64">
@@ -213,6 +228,13 @@ export const PollAdminPage = ({ user }: PollAdminPageProps) => {
             >
               <Settings className="w-4 h-4 mr-1" />
               Copy Admin Link
+            </button>
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="flex items-center px-3 py-2 border border-red-300 text-red-600 rounded-md hover:bg-red-50"
+            >
+              <Trash2 className="w-4 h-4 mr-1" />
+              Delete Poll
             </button>
           </div>
         </div>
@@ -452,6 +474,32 @@ export const PollAdminPage = ({ user }: PollAdminPageProps) => {
           })}
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Delete Poll</h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete this poll? This action cannot be undone and will permanently remove the poll and all associated votes.
+            </p>
+            <div className="flex space-x-3">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeletePoll}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+              >
+                Delete Poll
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

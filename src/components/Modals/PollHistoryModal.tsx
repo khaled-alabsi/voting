@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { X, Clock, User, Crown, Eye, ExternalLink, Settings } from 'lucide-react';
+import { X, Clock, User, Crown, Eye, ExternalLink, Settings, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { SessionService } from '../../services/sessionService';
+import { PollService } from '../../services/pollService';
 import type { PollHistory } from '../../types';
 import type { Timestamp } from 'firebase/firestore';
-import type { User as FirebaseUser } from 'firebase/auth';
 import { AuthService } from '../../services/authService';
 
 interface PollHistoryModalProps {
@@ -17,6 +17,8 @@ export const PollHistoryModal = ({ isOpen, onClose }: PollHistoryModalProps) => 
   const [createdPolls, setCreatedPolls] = useState<Array<{pollId: string, title: string, createdAt: Timestamp, status: string}>>([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'participated' | 'created'>('participated');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [pollToDelete, setPollToDelete] = useState<{pollId: string, title: string} | null>(null);
   const navigate = useNavigate();
   const currentUser = AuthService.getCurrentUser();
 
@@ -57,6 +59,27 @@ export const PollHistoryModal = ({ isOpen, onClose }: PollHistoryModalProps) => 
   const handleViewResults = (pollId: string) => {
     navigate(`/poll/${pollId}/results`);
     onClose();
+  };
+
+  const handleDeletePoll = (pollId: string, title: string) => {
+    setPollToDelete({ pollId, title });
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDeletePoll = async () => {
+    if (!pollToDelete) return;
+
+    try {
+      await PollService.deletePoll(pollToDelete.pollId);
+      // Refresh the poll history after deletion
+      await loadPollHistory();
+    } catch (error) {
+      console.error('Failed to delete poll:', error);
+      alert('Failed to delete poll. Please try again.');
+    } finally {
+      setShowDeleteConfirm(false);
+      setPollToDelete(null);
+    }
   };
 
   const getRoleIcon = (role: string) => {
@@ -283,6 +306,14 @@ export const PollHistoryModal = ({ isOpen, onClose }: PollHistoryModalProps) => 
                             <ExternalLink className="w-4 h-4 mr-1" />
                             View as Voter
                           </button>
+
+                          <button
+                            onClick={() => handleDeletePoll(poll.pollId, poll.title)}
+                            className="inline-flex items-center px-3 py-2 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4 mr-1" />
+                            Delete
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -321,6 +352,38 @@ export const PollHistoryModal = ({ isOpen, onClose }: PollHistoryModalProps) => 
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && pollToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Delete Poll</h3>
+            <p className="text-gray-600 mb-2">
+              Are you sure you want to delete <strong>"{pollToDelete.title}"</strong>?
+            </p>
+            <p className="text-gray-600 mb-6">
+              This action cannot be undone and will permanently remove the poll and all associated votes.
+            </p>
+            <div className="flex space-x-3">
+              <button
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  setPollToDelete(null);
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeletePoll}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+              >
+                Delete Poll
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
