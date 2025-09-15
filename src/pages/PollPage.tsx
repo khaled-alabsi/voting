@@ -23,6 +23,7 @@ export const PollPage = ({ user }: PollPageProps) => {
   const [showResults, setShowResults] = useState(false);
   const [showNameEntry, setShowNameEntry] = useState(false);
   const [voterName, setVoterName] = useState('Anonymous');
+  const [startingVoting, setStartingVoting] = useState(false);
 
   // Helper function to safely convert Firestore timestamp to Date
   const safeToDate = (timestamp: unknown): Date => {
@@ -57,7 +58,7 @@ export const PollPage = ({ user }: PollPageProps) => {
     
     initSession();
 
-    const unsubscribePoll = PollService.subscribeToPoll(pollId, (pollData) => {
+    const unsubscribePoll = PollService.subscribeToPoll(pollId, (pollData: Poll | null) => {
       setPoll(pollData);
       setLoading(false);
       if (!pollData) {
@@ -70,7 +71,7 @@ export const PollPage = ({ user }: PollPageProps) => {
       }
     });
 
-    const unsubscribeVotes = PollService.subscribeToVotes(pollId, (votesData) => {
+    const unsubscribeVotes = PollService.subscribeToVotes(pollId, (votesData: Vote[]) => {
       setVotes(votesData);
     });
 
@@ -88,38 +89,53 @@ export const PollPage = ({ user }: PollPageProps) => {
   };
 
   const beginVotingWithName = async () => {
-    if (!poll) return;
-
-    // Check if authentication is required
-    if (poll.settings.requireAuthentication && (!user || user.isAnonymous)) {
-      alert('This poll requires authentication. Please sign in to vote.');
+    if (!poll || startingVoting) {
       return;
     }
 
-    // Sign in anonymously if needed and allowed
-    if (!user && poll.settings.allowAnonymousVoting) {
-      try {
-        await AuthService.signInAnonymously();
-      } catch (error) {
-        console.error('Failed to sign in anonymously:', error);
-        alert('Failed to start voting session');
+    setStartingVoting(true);
+
+    try {
+      // Check if authentication is required
+      if (poll.settings.requireAuthentication && (!user || user.isAnonymous)) {
+        alert('This poll requires authentication. Please sign in to vote.');
+        setShowNameEntry(false);
         return;
       }
-    }
 
-    setVotingSession({
-      pollId: poll.id,
-      startedAt: new Date(),
-      currentQuestionIndex: 0,
-      answers: {},
-      timeSpent: {},
-      voterName: voterName
-    });
-    
-    // Update session with voter role and name
-    await SessionService.joinPoll(poll.id, 'voter', voterName);
-    
-    setShowNameEntry(false);
+      // Sign in anonymously if needed and allowed
+      if (!user && poll.settings.allowAnonymousVoting) {
+        try {
+          await AuthService.signInAnonymously();
+        } catch (error) {
+          console.error('Failed to sign in anonymously:', error);
+          alert('Failed to start voting session');
+          setShowNameEntry(false);
+          return;
+        }
+      }
+
+      setVotingSession({
+        pollId: poll.id,
+        startedAt: new Date(),
+        currentQuestionIndex: 0,
+        answers: {},
+        timeSpent: {},
+        voterName: voterName
+      });
+      
+      // Update session with voter role and name - this is crucial for poll history
+      await SessionService.joinPoll(poll.id, 'voter', voterName);
+      
+      // Close the modal after successful setup
+      setShowNameEntry(false);
+    } catch (error) {
+      console.error('Error starting voting session:', error);
+      alert('Failed to start voting session. Please try again.');
+      setShowNameEntry(false);
+    } finally {
+      setStartingVoting(false);
+    }
   };
 
   const selectAnswer = (questionId: string, answerId: string) => {
@@ -374,15 +390,24 @@ export const PollPage = ({ user }: PollPageProps) => {
             <div className="flex space-x-3">
               <button
                 onClick={() => setShowNameEntry(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+                disabled={startingVoting}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
               <button
                 onClick={beginVotingWithName}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                disabled={startingVoting}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
-                Start Voting
+                {startingVoting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Starting...
+                  </>
+                ) : (
+                  'Start Voting'
+                )}
               </button>
             </div>
           </div>
